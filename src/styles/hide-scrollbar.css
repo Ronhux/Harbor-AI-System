@@ -1,0 +1,10 @@
+/* Hide scrollbar for mobile and modern browsers */
+@media (max-width: 768px) {
+  html, body, .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar, .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
