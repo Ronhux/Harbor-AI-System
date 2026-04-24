@@ -12,9 +12,11 @@ export default function MonitoringDashboard() {
   ];
 
   const activityData = [
-    { month: 'Jan', producers: 1180, orders: 420, volume: 9800 },
-    { month: 'Feb', producers: 1247, orders: 485, volume: 12450 },
-    { month: 'Mar', producers: 0, orders: 0, volume: 0 },
+    { month: 'Jul', producers: 1180, orders: 420, volume: 9800 },
+    { month: 'Aug', producers: 1247, orders: 485, volume: 12450 },
+    { month: 'Sep', producers: 1270, orders: 520, volume: 13200 },
+    { month: 'Oct', producers: 1305, orders: 560, volume: 13850 },
+    { month: 'Nov', producers: 1340, orders: 590, volume: 14500 },
   ];
 
   const categoryData = [
@@ -73,7 +75,7 @@ export default function MonitoringDashboard() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Platform Activity</CardTitle>
-            <CardDescription>Monthly trends</CardDescription>
+            <CardDescription>Trends from July to November</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

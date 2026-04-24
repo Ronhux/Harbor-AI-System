@@ -203,8 +203,8 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
         
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-6">
-            <h3 className="font-bold text-blue-900 mb-2">View Recommendations</h3>
-            <p className="text-sm text-blue-700 mb-4">Get AI-powered enterprise insights</p>
+            <h3 className="font-bold text-blue-900 mb-2">View Market Insights</h3>
+            <p className="text-sm text-blue-700 mb-4">Get AI-powered market insight cards</p>
             <Dialog open={showRecommendations} onOpenChange={setShowRecommendations}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="border-blue-600 text-blue-700 hover:bg-blue-50">
@@ -213,7 +213,7 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>AI Enterprise Recommendations</DialogTitle>
+                  <DialogTitle>AI Market Insights</DialogTitle>
                   <DialogDescription>
                     Personalized insights based on your farming data and market trends
                   </DialogDescription>

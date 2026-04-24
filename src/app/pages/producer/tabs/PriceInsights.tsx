@@ -5,20 +5,19 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 
 export default function PriceInsights() {
   const priceData = [
-    { week: 'Week 1', rice: 120, corn: 42, fish: 175, vegetables: 58 },
-    { week: 'Week 2', rice: 122, corn: 44, fish: 180, vegetables: 60 },
-    { week: 'Week 3', rice: 125, corn: 45, fish: 185, vegetables: 62 },
-    { week: 'Week 4', rice: 128, corn: 46, fish: 182, vegetables: 65 },
-    { week: 'Week 5', rice: 130, corn: 48, fish: 188, vegetables: 68 },
-    { week: 'Week 6', rice: 125, corn: 45, fish: 190, vegetables: 70 },
+    { month: 'Jul', rice: 115, corn: 38, fish: 162, vegetables: 54 },
+    { month: 'Aug', rice: 118, corn: 40, fish: 168, vegetables: 56 },
+    { month: 'Sep', rice: 121, corn: 42, fish: 175, vegetables: 59 },
+    { month: 'Oct', rice: 124, corn: 44, fish: 181, vegetables: 62 },
+    { month: 'Nov', rice: 128, corn: 47, fish: 189, vegetables: 66 },
   ];
 
   const demandForecast = [
-    { month: 'Feb', projected: 850, current: 720 },
-    { month: 'Mar', projected: 920, current: 0 },
-    { month: 'Apr', projected: 980, current: 0 },
-    { month: 'May', projected: 1050, current: 0 },
-    { month: 'Jun', projected: 1100, current: 0 },
+    { month: 'Jul', projected: 790, current: 740 },
+    { month: 'Aug', projected: 820, current: 760 },
+    { month: 'Sep', projected: 860, current: 790 },
+    { month: 'Oct', projected: 900, current: 840 },
+    { month: 'Nov', projected: 940, current: 880 },
   ];
 
   const products = [
@@ -28,7 +27,7 @@ export default function PriceInsights() {
       marketAvg: 120,
       trend: 'up',
       change: 4.2,
-      recommendation: 'Your price is competitive. Consider maintaining current pricing.',
+      recommendation: 'Could maintaining your price at ₱125/kg keep your rice competitive in current markets?',
       demandLevel: 'High',
     },
     {
@@ -37,7 +36,7 @@ export default function PriceInsights() {
       marketAvg: 185,
       trend: 'up',
       change: 5.7,
-      recommendation: 'Market prices rising. You can increase to ₱185-190/kg.',
+      recommendation: 'Should you consider increasing tilapia pricing toward ₱185-190/kg as demand rises?',
       demandLevel: 'Very High',
     },
     {
@@ -46,7 +45,7 @@ export default function PriceInsights() {
       marketAvg: 48,
       trend: 'down',
       change: -2.1,
-      recommendation: 'Your pricing is below market average. Consider adjusting to ₱47/kg.',
+      recommendation: 'Is now the right moment to adjust corn pricing closer to the market average of ₱47/kg?',
       demandLevel: 'Medium',
     },
     {
@@ -55,7 +54,7 @@ export default function PriceInsights() {
       marketAvg: 65,
       trend: 'up',
       change: 8.3,
-      recommendation: 'High demand detected. Recommended price: ₱65-70/kg.',
+      recommendation: 'With strong vegetable demand, could pricing at ₱65-70/kg help maximize revenue?',
       demandLevel: 'High',
     },
   ];
@@ -63,21 +62,21 @@ export default function PriceInsights() {
   const marketInsights = [
     {
       title: 'Peak Season Approaching',
-      description: 'Rice demand expected to increase by 25% in the next month due to institutional procurement cycles.',
+      description: 'Rice demand expected to increase by 25% from July through November based on institutional buyer activity.',
       impact: 'High',
-      action: 'Increase production capacity and consider price adjustment',
+      action: 'Prepare supply and review pricing for the July-November window',
     },
     {
-      title: 'Competitor Analysis',
-      description: 'You are pricing 8% lower than top competitors while maintaining similar quality ratings.',
+      title: 'Competitor Positioning',
+      description: 'Your current rice pricing is 4% below regional market averages while maintaining solid quality ratings.',
       impact: 'Medium',
-      action: 'Gradual price increase opportunity without losing competitiveness',
+      action: 'Consider a gradual price adjustment to align with market benchmarks',
     },
     {
       title: 'Seasonal Opportunity',
-      description: 'Vegetable prices typically spike in March-April. Early preparation recommended.',
+      description: 'Vegetable prices typically rise in the second half of the year. Early planning can improve margin.',
       impact: 'Medium',
-      action: 'Plan for increased vegetable production',
+      action: 'Prepare for increased vegetable demand from October to November',
     },
   ];
 
@@ -87,23 +86,23 @@ export default function PriceInsights() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <TrendingUp className="w-8 h-8 text-green-600" />
-          Price Insights & Market Analysis
+          Smart Pricing Prompts & Market Analysis
         </h1>
-        <p className="text-gray-600 mt-1">AI-powered pricing recommendations and demand forecasts</p>
+        <p className="text-gray-600 mt-1">AI-assisted pricing prompts and market signals for July through November.</p>
       </div>
 
       {/* Market Trends */}
       <div className="grid lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Price Trends (Last 6 Weeks)</CardTitle>
+            <CardTitle>Price Trends (July - November)</CardTitle>
             <CardDescription>Market prices per kilogram</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={priceData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="week" />
+                <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip formatter={(value) => `₱${value}`} />
                 <Legend />
@@ -141,7 +140,7 @@ export default function PriceInsights() {
       <Card>
         <CardHeader>
           <CardTitle>Your Products - Price Analysis</CardTitle>
-          <CardDescription>AI recommendations based on market conditions</CardDescription>
+          <CardDescription>AI pricing prompts based on market conditions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -182,7 +181,7 @@ export default function PriceInsights() {
                 <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
                   <DollarSign className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-medium text-blue-900 mb-1">AI Recommendation</div>
+                    <div className="font-medium text-blue-900 mb-1">Pricing Prompt</div>
                     <div className="text-sm text-blue-800">{product.recommendation}</div>
                   </div>
                 </div>
@@ -236,15 +235,15 @@ export default function PriceInsights() {
               <ul className="space-y-2 text-sm text-purple-800">
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-1.5" />
-                  <span><strong>Feb 20:</strong> LGU bulk procurement period starts</span>
+                  <span><strong>Jul 10:</strong> Institutional demand window opens for rice.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-1.5" />
-                  <span><strong>Mar 1:</strong> Peak season for institutional vegetable demand</span>
+                  <span><strong>Sep 1:</strong> Peak buyer requests for vegetables expected.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-1.5" />
-                  <span><strong>Mar 15:</strong> Kadiwa program expansion in Cagayan Valley</span>
+                  <span><strong>Nov 5:</strong> Price review deadline for seasonal produce.</span>
                 </li>
               </ul>
             </div>

@@ -8,7 +8,7 @@ export default function Reports() {
     { id: 1, name: 'Monthly Producer Activity Report', period: 'February 2026', type: 'Activity', generated: '2026-02-14', size: '2.4 MB' },
     { id: 2, name: 'Supply-Demand Analysis', period: 'Q1 2026', type: 'Analytics', generated: '2026-02-13', size: '1.8 MB' },
     { id: 3, name: 'Program Utilization Report', period: 'January 2026', type: 'Program', generated: '2026-02-01', size: '1.2 MB' },
-    { id: 4, name: 'Procurement Summary', period: 'February 2026', type: 'Procurement', generated: '2026-02-12', size: '956 KB' },
+    { id: 4, name: 'Demand Summary', period: 'February 2026', type: 'Demand', generated: '2026-02-12', size: '956 KB' },
   ];
 
   return (

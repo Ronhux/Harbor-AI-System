@@ -4,10 +4,11 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 
 export default function SupplyDemandAnalytics() {
   const supplyDemandData = [
-    { month: 'Jan', supply: 8500, demand: 7200 },
-    { month: 'Feb', supply: 9200, demand: 8500 },
-    { month: 'Mar', supply: 8800, demand: 9200 },
-    { month: 'Apr', supply: 10500, demand: 10200 },
+    { month: 'Jul', supply: 8500, demand: 7800 },
+    { month: 'Aug', supply: 8800, demand: 8000 },
+    { month: 'Sep', supply: 9100, demand: 8400 },
+    { month: 'Oct', supply: 9400, demand: 8800 },
+    { month: 'Nov', supply: 9800, demand: 9300 },
   ];
 
   const productData = [
@@ -31,7 +32,7 @@ export default function SupplyDemandAnalytics() {
         <Card>
           <CardHeader>
             <CardTitle>Supply vs Demand Trend</CardTitle>
-            <CardDescription>Monthly comparison (kg)</CardDescription>
+            <CardDescription>Monthly comparison from July to November (kg)</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

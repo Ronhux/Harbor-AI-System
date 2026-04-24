@@ -30,11 +30,11 @@ export default function ProducerDashboard() {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'recommendations', label: 'Enterprise Recommendations', icon: Sprout },
+    { id: 'recommendations', label: 'Market Insights', icon: Sprout },
     { id: 'programs', label: 'Program Eligibility', icon: FileText },
     { id: 'listings', label: 'My Listings (Digital Stall)', icon: ShoppingBag },
-    { id: 'orders', label: 'Orders & Commitments', icon: Package },
-    { id: 'insights', label: 'Price Insights', icon: TrendingUp },
+    { id: 'orders', label: 'Transaction Management', icon: Package },
+    { id: 'insights', label: 'Smart Pricing Prompts', icon: TrendingUp },
     { id: 'profile', label: 'My Profile', icon: User },
   ];
 

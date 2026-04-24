@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
+  LayoutDashboard,
   ShoppingCart,
   FileText,
   Package,
@@ -8,6 +9,7 @@ import {
   User
 } from 'lucide-react';
 import DashboardShell from '../../components/dashboard/DashboardShell';
+import Overview from './tabs/Overview';
 import BrowseProducers from './tabs/BrowseProducers';
 import PostDemand from './tabs/PostDemand';
 import Orders from './tabs/Orders';
@@ -16,7 +18,7 @@ import Profile from './tabs/Profile';
 
 export default function BuyerDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('browse');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const handleLogout = () => {
     localStorage.clear();
@@ -24,6 +26,7 @@ export default function BuyerDashboard() {
   };
 
   const tabs = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'browse', label: 'Browse Producers', icon: ShoppingCart },
     { id: 'demand', label: 'Post Demand', icon: FileText },
     { id: 'orders', label: 'Orders', icon: Package },
@@ -33,6 +36,8 @@ export default function BuyerDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'overview':
+        return <Overview />;
       case 'browse':
         return <BrowseProducers />;
       case 'demand':
@@ -44,14 +49,14 @@ export default function BuyerDashboard() {
       case 'profile':
         return <Profile />;
       default:
-        return <BrowseProducers />;
+        return <Overview />;
     }
   };
 
   return (
     <DashboardShell
       title="Buyer Dashboard"
-      subtitle="Procurement & market insights"
+      subtitle="Transaction overview & market intelligence"
       tabs={tabs}
       activeTab={activeTab}
       onTabChange={setActiveTab}

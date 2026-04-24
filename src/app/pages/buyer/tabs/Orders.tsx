@@ -26,7 +26,7 @@ export default function Orders() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-        <p className="text-gray-600 mt-1">Track your procurement orders</p>
+        <p className="text-gray-600 mt-1">Track your institutional order lifecycle</p>
       </div>
 
       <div className="space-y-4">
@@ -67,7 +67,7 @@ export default function Orders() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Order Details - {selectedOrder?.id}</DialogTitle>
-            <DialogDescription>Complete information about this procurement order</DialogDescription>
+            <DialogDescription>Complete information about this order</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">

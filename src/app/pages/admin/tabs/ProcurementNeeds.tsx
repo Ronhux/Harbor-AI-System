@@ -23,12 +23,12 @@ export default function ProcurementNeeds() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Procurement Needs</h1>
-          <p className="text-gray-600 mt-1">Manage institutional procurement requests</p>
+          <h1 className="text-3xl font-bold text-gray-900">Supply & Demand Monitoring</h1>
+          <p className="text-gray-600 mt-1">Monitor institutional buyer demand and producer availability without executing transactions.</p>
         </div>
         <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => setShowNewProcurement(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          New Procurement
+          Add Demand Notice
         </Button>
       </div>
 
@@ -75,8 +75,8 @@ export default function ProcurementNeeds() {
       <Dialog open={showNewProcurement} onOpenChange={setShowNewProcurement}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Procurement</DialogTitle>
-            <DialogDescription>Create a new procurement request</DialogDescription>
+            <DialogTitle>Add New Demand Notice</DialogTitle>
+            <DialogDescription>Record a new institutional demand posting for monitoring</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -119,7 +119,7 @@ export default function ProcurementNeeds() {
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setShowNewProcurement(false)} className="flex-1">Cancel</Button>
-              <Button className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={() => { alert('Procurement added successfully!'); setShowNewProcurement(false); }}>Add Procurement</Button>
+              <Button className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={() => { alert('Demand notice added successfully!'); setShowNewProcurement(false); }}>Add Demand Notice</Button>
             </div>
           </div>
         </DialogContent>
@@ -130,12 +130,12 @@ export default function ProcurementNeeds() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Matched Producers</DialogTitle>
-            <DialogDescription>Producers matching the procurement request for {selectedProcurement?.product}</DialogDescription>
+            <DialogDescription>Producers matching the demand notice for {selectedProcurement?.product}</DialogDescription>
           </DialogHeader>
           {selectedProcurement && (
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-bold mb-2">Procurement Details</h4>
+                <h4 className="font-bold mb-2">Demand Notice Details</h4>
                 <p className="text-sm text-gray-600">{selectedProcurement.buyer} • {selectedProcurement.quantity} • Due: {selectedProcurement.deadline}</p>
               </div>
               <div className="space-y-3">

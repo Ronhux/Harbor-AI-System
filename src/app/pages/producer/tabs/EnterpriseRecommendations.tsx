@@ -109,9 +109,9 @@ export default function EnterpriseRecommendations() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Brain className="w-8 h-8 text-blue-600" />
-            Enterprise Recommendations
+            Market Insights
           </h1>
-          <p className="text-gray-600 mt-1">AI-powered opportunities tailored to your profile and market conditions</p>
+          <p className="text-gray-600 mt-1">AI-powered market insights tailored to your profile and current trading conditions</p>
         </div>
         <Button variant="outline" onClick={() => alert('AI feature not yet implemented. This would refresh the analysis with latest market data.')}>
           Refresh Analysis
@@ -225,10 +225,10 @@ export default function EnterpriseRecommendations() {
 
               {/* Actions */}
               <div className="flex gap-3 pt-4 border-t">
-                <Button className="bg-green-600 hover:bg-green-700" onClick={() => alert('AI feature not yet implemented. This would start the enterprise setup process.')}>
-                  Start This Enterprise
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => alert('AI feature not yet implemented. This would start the market action plan.')}>
+                  Start This Opportunity
                 </Button>
-                <Button variant="outline" onClick={() => alert('AI feature not yet implemented. This would save the recommendation for later review.')}>
+                <Button variant="outline" onClick={() => alert('AI feature not yet implemented. This would save the insight for later review.')}>
                   Save for Later
                 </Button>
                 <Button variant="ghost" onClick={() => alert('AI feature not yet implemented. This would show detailed analysis and projections.')}>
@@ -248,13 +248,13 @@ export default function EnterpriseRecommendations() {
               <Brain className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-blue-900 mb-2">How AI Recommendations Work</h3>
+              <h3 className="font-bold text-blue-900 mb-2">How AI Market Insights Work</h3>
               <p className="text-sm text-blue-800 mb-3">
                 Our AI analyzes your location, current capabilities, soil/water conditions, market demand, 
-                government programs, and seasonal factors to identify the best opportunities for your enterprise.
+                government programs, and seasonal factors to identify high-value market opportunities.
               </p>
               <p className="text-sm text-blue-800">
-                Recommendations are updated weekly based on real-time market data and procurement patterns.
+                Insights are updated monthly based on real-time market data and demand patterns.
               </p>
             </div>
           </div>

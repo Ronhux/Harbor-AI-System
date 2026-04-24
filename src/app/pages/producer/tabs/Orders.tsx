@@ -64,6 +64,17 @@ export default function Orders() {
       deliveryDate: 'N/A',
       paymentStatus: 'Refunded',
     },
+    {
+      id: 'ORD-2026-006',
+      buyer: 'LGU Aparri',
+      product: 'Mixed Vegetables',
+      quantity: '250 kg',
+      amount: 17500,
+      status: 'Completed',
+      date: '2026-01-20',
+      deliveryDate: '2026-01-27',
+      paymentStatus: 'Paid',
+    },
   ];
 
   const getStatusConfig = (status: string) => {
@@ -72,6 +83,7 @@ export default function Orders() {
       'Processing': { icon: Package, color: 'blue', badge: 'bg-blue-500' },
       'In Transit': { icon: Truck, color: 'purple', badge: 'bg-purple-500' },
       'Delivered': { icon: CheckCircle2, color: 'green', badge: 'bg-green-500' },
+      'Completed': { icon: CheckCircle2, color: 'teal', badge: 'bg-teal-500' },
       'Cancelled': { icon: XCircle, color: 'red', badge: 'bg-red-500' },
     };
     return configs[status] || configs['Pending'];
@@ -161,9 +173,9 @@ export default function Orders() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <Package className="w-8 h-8 text-blue-600" />
-          Orders & Commitments
+          Transaction Management
         </h1>
-        <p className="text-gray-600 mt-1">Track and manage your institutional orders</p>
+        <p className="text-gray-600 mt-1">Track your institutional order lifecycle from request through completion</p>
       </div>
 
       {/* Summary Stats */}
@@ -206,6 +218,14 @@ export default function Orders() {
             <div className="text-sm text-gray-600">Delivered</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-teal-600">
+              {filterOrders('Completed').length}
+            </div>
+            <div className="text-sm text-gray-600">Completed</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Orders Tabs */}
@@ -213,7 +233,8 @@ export default function Orders() {
         <TabsList>
           <TabsTrigger value="all">All Orders</TabsTrigger>
           <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="Delivered">Completed</TabsTrigger>
+          <TabsTrigger value="Delivered">Delivered</TabsTrigger>
+          <TabsTrigger value="Completed">Completed</TabsTrigger>
           <TabsTrigger value="Cancelled">Cancelled</TabsTrigger>
         </TabsList>
 
@@ -232,6 +253,12 @@ export default function Orders() {
         <TabsContent value="Delivered" className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             {filterOrders('Delivered').map(renderOrderCard)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="Completed" className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {filterOrders('Completed').map(renderOrderCard)}
           </div>
         </TabsContent>
 

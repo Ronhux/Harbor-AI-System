@@ -87,9 +87,9 @@ export function ProductBacklog() {
 
             {/* Module 2 */}
             <div>
-              <h3 className="font-semibold text-lg mb-3 text-gray-900">Enterprise Recommendations</h3>
+              <h3 className="font-semibold text-lg mb-3 text-gray-900">Market Insights</h3>
               <ul className="space-y-2 text-sm text-gray-700">
-                <li>• ML recommendation model</li>
+                <li>• ML insight model</li>
                 <li>• Weather data integration</li>
                 <li>• Market trend analysis</li>
                 <li>• Seasonal optimization</li>
@@ -99,12 +99,12 @@ export function ProductBacklog() {
 
             {/* Module 3 */}
             <div>
-              <h3 className="font-semibold text-lg mb-3 text-gray-900">Price Insights & Forecasting</h3>
+              <h3 className="font-semibold text-lg mb-3 text-gray-900">Smart Pricing Prompts & Forecasting</h3>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li>• DA Price API integration</li>
                 <li>• Real-time price updates</li>
                 <li>• Regional comparisons</li>
-                <li>• AI price forecasting</li>
+                <li>• AI pricing prompts</li>
                 <li>• Price alerts</li>
               </ul>
             </div>

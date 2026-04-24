@@ -19,16 +19,16 @@ export default function PostDemand() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Post Procurement Demand</h1>
-        <p className="text-gray-600 mt-1">Create procurement requests and receive matches from producers</p>
+        <h1 className="text-3xl font-bold text-gray-900">Post Demand Notice</h1>
+        <p className="text-gray-600 mt-1">Create demand postings and receive matches from producers</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Post Form */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>New Procurement Request</CardTitle>
-            <CardDescription>Fill in the details of your procurement need</CardDescription>
+            <CardTitle>New Demand Notice</CardTitle>
+            <CardDescription>Fill in the details of your institutional demand</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
@@ -88,7 +88,7 @@ export default function PostDemand() {
 
             <Button className="w-full bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
-              Post Procurement Demand
+              Post Demand Notice
             </Button>
           </CardContent>
         </Card>
@@ -97,7 +97,7 @@ export default function PostDemand() {
         <Card>
           <CardHeader>
             <CardTitle>Your Posted Demands</CardTitle>
-            <CardDescription>Active procurement requests</CardDescription>
+            <CardDescription>Active demand postings</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -130,7 +130,7 @@ export default function PostDemand() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Demand Details</DialogTitle>
-            <DialogDescription>Procurement request for {selectedDemand?.product}</DialogDescription>
+            <DialogDescription>Demand notice for {selectedDemand?.product}</DialogDescription>
           </DialogHeader>
           {selectedDemand && (
             <div className="space-y-4">

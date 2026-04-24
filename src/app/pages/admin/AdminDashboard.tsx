@@ -27,7 +27,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'dashboard', label: 'Monitoring Dashboard', icon: LayoutDashboard },
-    { id: 'procurement', label: 'Procurement Needs', icon: ShoppingCart },
+    { id: 'procurement', label: 'Supply & Demand Monitoring', icon: ShoppingCart },
     { id: 'registry', label: 'Registry Management', icon: Users },
     { id: 'analytics', label: 'Supply-Demand Analytics', icon: BarChart3 },
     { id: 'programs', label: 'Program Management', icon: FileText },

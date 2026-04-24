@@ -179,7 +179,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Price & Demand Forecasting</h3>
                 <p className="text-gray-600">
-                  Make informed decisions with AI-assisted price insights and demand predictions.
+                  Make informed decisions with AI-assisted smart pricing prompts and demand predictions.
                 </p>
               </CardContent>
             </Card>
@@ -191,7 +191,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Digital Marketplace</h3>
                 <p className="text-gray-600">
-                  List your products, track orders, and manage commitments all in one secure platform.
+                  List your products, track orders, and manage transactions all in one secure platform.
                 </p>
               </CardContent>
             </Card>
@@ -265,7 +265,7 @@ export default function LandingPage() {
                 <ul className="text-sm text-gray-600 text-left space-y-2">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Enterprise recommendations</span>
+                    <span>Market insights</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />

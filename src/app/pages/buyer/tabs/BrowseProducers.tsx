@@ -21,7 +21,7 @@ export default function BrowseProducers() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Browse Producers</h1>
-        <p className="text-gray-600 mt-1">Find verified producers for your procurement needs</p>
+        <p className="text-gray-600 mt-1">Find verified producers for your institutional supply needs</p>
       </div>
 
       {/* Filters */}
