@@ -12,22 +12,28 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
 
         $middleware->alias([
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Handle TokenMismatchException and return JSON for API requests
-        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+
+        $exceptions->render(function (
+            \Illuminate\Session\TokenMismatchException $e,
+            $request
+        ) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'CSRF token mismatch',
-                    'errors' => ['_token' => ['CSRF token verification failed']]
+                    'errors' => [
+                        '_token' => [
+                            'CSRF token verification failed'
+                        ]
+                    ]
                 ], 419);
             }
         });
+
     })->create();

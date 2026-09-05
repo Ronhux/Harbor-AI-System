@@ -1,26 +1,24 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     
-    if (!email || !password || !role) {
+    if (!email || !password) {
       setError('Please fill in all fields');
       setLoading(false);
       return;
@@ -44,8 +42,10 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (response.ok) {
-        // Store user data and auth token
-        localStorage.setItem('userRole', role);
+        const userType = result.user?.user_type;
+        const normalizedRole = userType === 'Farmer' ? 'producer' : userType === 'Buyer' ? 'buyer' : userType === 'Admin' ? 'admin' : 'buyer';
+
+        localStorage.setItem('userRole', normalizedRole);
         localStorage.setItem('userEmail', result.user.email);
         localStorage.setItem('userName', `${result.user.first_name} ${result.user.last_name}`);
         localStorage.setItem('userId', result.user.user_id.toString());
@@ -53,17 +53,15 @@ export default function LoginPage() {
           localStorage.setItem('authToken', result.token);
         }
         
-        // Store verification status for producers
         if (result.user.verification_status) {
           localStorage.setItem('verificationStatus', result.user.verification_status);
         }
         
-        // Navigate based on role
-        if (role === 'admin') {
+        if (normalizedRole === 'admin') {
           navigate('/admin');
-        } else if (role === 'producer') {
+        } else if (normalizedRole === 'producer') {
           navigate('/producer');
-        } else if (role === 'buyer') {
+        } else if (normalizedRole === 'buyer') {
           navigate('/buyer');
         }
       } else {
@@ -111,28 +109,25 @@ export default function LoginPage() {
 
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="role">Login As</Label>
-              <Select value={role} onValueChange={setRole} required>
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="producer">Producer (Farmer/Fisher)</SelectItem>
-                  <SelectItem value="buyer">Institutional Buyer</SelectItem>
-                  <SelectItem value="admin">Administrator (DA/LGU)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>

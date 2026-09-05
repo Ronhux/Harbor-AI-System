@@ -11,6 +11,8 @@ class DemandRequest extends Model
 
     protected $table = 'demand_requests';
 
+    protected $primaryKey = 'request_id';
+
     protected $fillable = [
         'buyer_id',
         'product_name',

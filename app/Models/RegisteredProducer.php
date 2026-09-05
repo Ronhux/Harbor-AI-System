@@ -15,9 +15,16 @@ class RegisteredProducer extends Model
 
     protected $fillable = [
         'rsbsa_number',
+        'name',
         'full_name',
         'municipality',
         'barangay',
+        'province',
+        'farm_type',
+        'farm_size',
+        'contact_number',
+        'email',
+        'registration_date',
         'primary_livelihood',
         'producer_type',
         'status',

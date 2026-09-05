@@ -15,7 +15,16 @@ class ProducerController extends Controller
         $producer = Producer::where('user_id', $user->user_id)->first();
 
         if (!$producer) {
-            return response()->json(['message' => 'Producer profile not found'], 404);
+            $producer = Producer::firstOrCreate(
+                ['user_id' => $user->user_id],
+                [
+                    'rsbsa_number' => null,
+                    'location' => null,
+                    'primary_product_type' => null,
+                    'verification_status' => 'Pending',
+                    'producer_type' => $user->user_type === 'Farmer' ? 'Farmer' : null,
+                ]
+            );
         }
 
         return response()->json([
@@ -31,8 +40,52 @@ class ProducerController extends Controller
                 'email' => $user->email,
                 'contact_number' => $user->contact_number,
             ],
-            'product_listings' => $producer->productListings,
+            'product_listings' => $producer->productListings()->orderByDesc('created_at')->get()->map(function ($listing) {
+                return $this->serializeListing($listing);
+            })->values(),
         ]);
+    }
+
+    public function browseProducers()
+    {
+        $producers = Producer::with(['user', 'productListings' => function ($query) {
+            $query->orderByDesc('created_at');
+        }])
+            ->where('verification_status', 'Verified')
+            ->orderByDesc('producer_id')
+            ->get();
+
+        $data = $producers->map(function (Producer $producer) {
+            $listings = $producer->productListings->map(function ($listing) {
+                return [
+                    'listing_id' => $listing->listing_id,
+                    'product_name' => $listing->product_name,
+                    'product_category' => $listing->product_category ?? $listing->category,
+                    'current_price_per_unit' => (float) ($listing->current_price_per_unit ?? $listing->price_per_unit ?? 0),
+                    'unit' => $listing->unit_of_measure ?? $listing->unit ?? 'kg',
+                    'quantity_available' => (float) ($listing->quantity_available ?? $listing->quantity ?? 0),
+                    'status' => $listing->status ?? 'Active',
+                ];
+            })->values();
+
+            $name = trim(($producer->user->first_name ?? '') . ' ' . ($producer->user->last_name ?? '')) ?: 'Verified Producer';
+
+            return [
+                'id' => $producer->producer_id,
+                'producer_id' => $producer->producer_id,
+                'name' => $name,
+                'type' => $producer->producer_type === 'Fisherfolk' ? 'Fisher' : ($producer->producer_type ?? 'Farmer'),
+                'location' => $producer->location ?? 'N/A',
+                'verified' => ($producer->verification_status ?? 'Pending') === 'Verified',
+                'products' => $listings->pluck('product_name')->filter()->values()->all(),
+                'product_listings' => $listings,
+                'rating' => 4.8,
+                'orders' => (int) max(1, $listings->count() * 3),
+                'price' => $listings->isNotEmpty() ? '₱' . number_format((float) $listings->first()['current_price_per_unit'], 0) . '/kg' : '₱0/kg',
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
     }
 
     public function createProductListing(Request $request)
@@ -55,17 +108,179 @@ class ProducerController extends Controller
             'unit' => 'required|string|max:50',
             'price_per_unit' => 'required|numeric|min:0',
             'description' => 'nullable|string',
-            'location' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
             'harvest_date' => 'nullable|date',
-            'expiry_date' => 'nullable|date',
         ]);
 
-        $listing = ProductListing::create([
-            'producer_id' => $producer->id,
-            ...$request->all(),
-            'status' => 'active',
+        $category = $request->input('category');
+        $unit = $request->input('unit');
+        $quantity = (float) $request->input('quantity');
+        $price = (float) $request->input('price_per_unit');
+
+        $data = [
+            'producer_id' => $producer->producer_id,
+            'product_name' => $request->input('product_name'),
+            'product_category' => $category,
+            'category' => $category,
+            'quantity_available' => $quantity,
+            'quantity' => $quantity,
+            'unit_of_measure' => $unit,
+            'unit' => $unit,
+            'current_price_per_unit' => $price,
+            'price_per_unit' => $price,
+            'harvest_date' => $request->input('harvest_date'),
+            'status' => 'Active',
+        ];
+
+        if ($request->filled('description')) {
+            $data['description'] = $request->input('description');
+        }
+
+        if ($request->filled('location')) {
+            $data['location'] = $request->input('location');
+        }
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $path = $file->store('public/product_images');
+            $data['image_path'] = $path;
+            $data['image_url'] = \Illuminate\Support\Facades\Storage::url($path);
+        }
+
+        $listing = ProductListing::create($data);
+
+        return response()->json([
+            'message' => 'Product listing created successfully',
+            'listing' => $this->serializeListing($listing),
+        ], 201);
+    }
+
+    public function updateProductListing(Request $request, $listingId)
+    {
+        $user = Auth::user();
+        $producer = Producer::where('user_id', $user->user_id)->first();
+        $listing = ProductListing::where('listing_id', $listingId)
+            ->where('producer_id', $producer->producer_id)
+            ->firstOrFail();
+
+        $request->validate([
+            'product_name' => 'sometimes|required|string|max:255',
+            'category' => 'sometimes|required|string|max:255',
+            'quantity' => 'sometimes|required|numeric|min:0',
+            'unit' => 'sometimes|required|string|max:50',
+            'price_per_unit' => 'sometimes|required|numeric|min:0',
+            'description' => 'nullable|string',
+            'location' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:50',
+            'harvest_date' => 'nullable|date',
         ]);
 
-        return response()->json(['message' => 'Product listing created successfully', 'listing' => $listing], 201);
+        $updates = [];
+
+        if ($request->has('product_name')) {
+            $updates['product_name'] = $request->input('product_name');
+        }
+
+        if ($request->has('category')) {
+            $category = $request->input('category');
+            $updates['product_category'] = $category;
+            $updates['category'] = $category;
+        }
+
+        if ($request->has('quantity')) {
+            $quantity = (float) $request->input('quantity');
+            $updates['quantity_available'] = $quantity;
+            $updates['quantity'] = $quantity;
+        }
+
+        if ($request->has('unit')) {
+            $unit = $request->input('unit');
+            $updates['unit_of_measure'] = $unit;
+            $updates['unit'] = $unit;
+        }
+
+        if ($request->has('price_per_unit')) {
+            $price = (float) $request->input('price_per_unit');
+            $updates['current_price_per_unit'] = $price;
+            $updates['price_per_unit'] = $price;
+        }
+
+        if ($request->has('description')) {
+            $updates['description'] = $request->input('description');
+        }
+
+        if ($request->has('location')) {
+            $updates['location'] = $request->input('location');
+        }
+
+        if ($request->has('status')) {
+            $updates['status'] = $request->input('status');
+        }
+
+        if ($request->has('harvest_date')) {
+            $updates['harvest_date'] = $request->input('harvest_date');
+        }
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $path = $file->store('public/product_images');
+            $updates['image_path'] = $path;
+            $updates['image_url'] = \Illuminate\Support\Facades\Storage::url($path);
+        }
+
+        $listing->fill($updates);
+        $listing->save();
+
+        return response()->json([
+            'message' => 'Product listing updated successfully',
+            'listing' => $this->serializeListing($listing),
+        ]);
+    }
+
+    public function deleteProductListing($listingId)
+    {
+        $user = Auth::user();
+        $producer = Producer::where('user_id', $user->user_id)->first();
+        $listing = ProductListing::where('listing_id', $listingId)
+            ->where('producer_id', $producer->producer_id)
+            ->firstOrFail();
+
+        $listing->delete();
+
+        return response()->json(['message' => 'Product listing deleted successfully']);
+    }
+
+    protected function serializeListing(ProductListing $listing): array
+    {
+        $category = $listing->product_category ?? $listing->category ?? 'General';
+        $unit = $listing->unit_of_measure ?? $listing->unit ?? 'unit';
+        $price = $listing->current_price_per_unit ?? $listing->price_per_unit ?? 0;
+        $quantity = $listing->quantity_available ?? $listing->quantity ?? 0;
+
+        return [
+            'listing_id' => $listing->listing_id,
+            'id' => $listing->listing_id,
+            'producer_id' => $listing->producer_id,
+            'product_name' => $listing->product_name,
+            'product_category' => $category,
+            'category' => $category,
+            'current_price_per_unit' => (float) $price,
+            'price_per_unit' => (float) $price,
+            'price' => (float) $price,
+            'unit_of_measure' => $unit,
+            'unit' => $unit,
+            'quantity_available' => (float) $quantity,
+            'quantity' => (float) $quantity,
+            'status' => $listing->status ?? 'Active',
+            'views' => 0,
+            'orders' => 0,
+            'image_path' => $listing->image_path,
+            'image_url' => $listing->image_url,
+            'description' => $listing->description,
+            'location' => $listing->location,
+            'harvest_date' => $listing->harvest_date,
+            'created_at' => $listing->created_at,
+            'updated_at' => $listing->updated_at,
+        ];
     }
 }

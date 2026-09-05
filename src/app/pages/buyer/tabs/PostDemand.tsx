@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { FileText, Plus, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
@@ -10,11 +10,84 @@ import { Badge } from '../../../components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
 
 export default function PostDemand() {
-  const [selectedDemand, setSelectedDemand] = useState<typeof postedDemands[0] | null>(null);
-  const postedDemands = [
-    { id: 1, product: 'Rice', quantity: '2000 kg', deadline: '2026-02-28', matches: 15, status: 'Active' },
-    { id: 2, product: 'Fresh Fish', quantity: '500 kg', deadline: '2026-02-20', matches: 8, status: 'Active' },
-  ];
+  type Demand = {
+    id: number;
+    product: string;
+    quantity: string;
+    deadline: string;
+    matches: number;
+    status: string;
+  };
+
+  const [selectedDemand, setSelectedDemand] = useState<Demand | null>(null);
+  const [postedDemands, setPostedDemands] = useState<Demand[]>([]);
+  const [product, setProduct] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [budget, setBudget] = useState('');
+  const [requirements, setRequirements] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadDemands = async () => {
+    try {
+      const { request } = await import('../../../../lib/api');
+      const response = await request('/api/buyer/demands');
+      setPostedDemands((response.data || []).map((demand: any) => ({
+        id: demand.id,
+        product: demand.product_name,
+        quantity: `${demand.quantity_needed} ${demand.unit}`,
+        deadline: demand.deadline,
+        matches: demand.demand_details_count || 0,
+        status: demand.status,
+      })));
+    } catch (err: any) {
+      setError(err.message || 'Unable to load demand notices.');
+    }
+  };
+
+  useEffect(() => {
+    loadDemands();
+  }, []);
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+
+    if (!product || !quantity || !unit || !deadline) {
+      setError('Please complete the product, quantity, unit, and deadline fields.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { request } = await import('../../../../lib/api');
+      await request('/api/buyer/demands', {
+        method: 'POST',
+        body: {
+          product_name: product,
+          category: product,
+          quantity_needed: Number(quantity),
+          unit,
+          max_price_per_unit: budget ? Number(budget) : null,
+          description: requirements || null,
+          deadline,
+        },
+      });
+      setProduct('');
+      setQuantity('');
+      setUnit('');
+      setDeadline('');
+      setBudget('');
+      setRequirements('');
+      await loadDemands();
+    } catch (err: any) {
+      setError(err.message || 'Unable to post demand notice.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -30,11 +103,12 @@ export default function PostDemand() {
             <CardTitle>New Demand Notice</CardTitle>
             <CardDescription>Fill in the details of your institutional demand</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
+            <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="product">Product Type</Label>
-                <Select>
+                <Select value={product} onValueChange={setProduct}>
                   <SelectTrigger id="product">
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
@@ -48,14 +122,14 @@ export default function PostDemand() {
               </div>
               <div>
                 <Label htmlFor="quantity">Quantity Needed</Label>
-                <Input id="quantity" type="number" placeholder="e.g., 2000" />
+                <Input id="quantity" type="number" min="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="e.g., 2000" />
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="unit">Unit</Label>
-                <Select>
+                <Select value={unit} onValueChange={setUnit}>
                   <SelectTrigger id="unit">
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
@@ -68,13 +142,13 @@ export default function PostDemand() {
               </div>
               <div>
                 <Label htmlFor="deadline">Deadline</Label>
-                <Input id="deadline" type="date" />
+                <Input id="deadline" type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} />
               </div>
             </div>
 
             <div>
               <Label htmlFor="budget">Budget Range (Optional)</Label>
-              <Input id="budget" placeholder="e.g., ₱100-120 per kg" />
+              <Input id="budget" type="number" min="0" value={budget} onChange={(event) => setBudget(event.target.value)} placeholder="Maximum price per unit" />
             </div>
 
             <div>
@@ -83,13 +157,18 @@ export default function PostDemand() {
                 id="requirements" 
                 placeholder="Quality standards, certifications, delivery preferences..."
                 rows={3}
+                value={requirements}
+                onChange={(event) => setRequirements(event.target.value)}
               />
             </div>
 
-            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+            {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
-              Post Demand Notice
+              {isSubmitting ? 'Posting...' : 'Post Demand Notice'}
             </Button>
+            </form>
           </CardContent>
         </Card>
 
@@ -105,7 +184,7 @@ export default function PostDemand() {
                 <div key={demand.id} className="p-3 border rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-bold text-gray-900">{demand.product}</h4>
-                    <Badge className="bg-green-500">Active</Badge>
+                    <Badge className="bg-green-500">{demand.status}</Badge>
                   </div>
                   <div className="text-sm text-gray-600 space-y-1 mb-3">
                     <div>Quantity: {demand.quantity}</div>

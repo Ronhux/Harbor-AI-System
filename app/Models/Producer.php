@@ -33,11 +33,11 @@ class Producer extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
     public function productListings()
     {
-        return $this->hasMany(ProductListing::class);
+        return $this->hasMany(ProductListing::class, 'producer_id', 'producer_id');
     }
 }

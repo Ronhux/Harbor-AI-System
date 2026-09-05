@@ -184,18 +184,27 @@ class AuthController extends Controller
 
         // Get role-specific information
         if ($user->user_type === 'Farmer') {
-            $producer = Producer::where('user_id', $user->user_id)->first();
-            if ($producer) {
-                $userData['producer_id'] = $producer->producer_id;
-                $userData['verification_status'] = $producer->verification_status;
-                $userData['rsbsa_number'] = $producer->rsbsa_number;
-                $userData['producer_type'] = $producer->producer_type;
-            }
+            $producer = Producer::firstOrCreate(
+                ['user_id' => $user->user_id],
+                [
+                    'rsbsa_number' => null,
+                    'location' => null,
+                    'primary_product_type' => null,
+                    'verification_status' => 'Pending',
+                    'producer_type' => 'Farmer',
+                ]
+            );
+
+            $userData['producer_id'] = $producer->producer_id;
+            $userData['verification_status'] = $producer->verification_status;
+            $userData['rsbsa_number'] = $producer->rsbsa_number;
+            $userData['producer_type'] = $producer->producer_type;
         } elseif ($user->user_type === 'Buyer') {
             $buyer = \App\Models\Buyer::where('user_id', $user->user_id)->first();
             if ($buyer) {
                 $userData['buyer_id'] = $buyer->buyer_id;
                 $userData['buyer_type'] = $buyer->buyer_type;
+                $userData['verification_status'] = $buyer->verification_status;
             }
         } elseif ($user->user_type === 'Admin') {
             $admin = Admin::where('user_id', $user->user_id)->first();

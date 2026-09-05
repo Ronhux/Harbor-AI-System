@@ -78,6 +78,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the buyer associated with this user.
+     */
+    public function buyer()
+    {
+        return $this->hasOne(Buyer::class, 'user_id', 'user_id');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

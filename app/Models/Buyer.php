@@ -15,6 +15,7 @@ class Buyer extends Model
         'user_id',
         'organization_name',
         'buyer_type',
+        'verification_status',
         'contact_person',
         'shipping_address',
     ];
@@ -34,5 +35,10 @@ class Buyer extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function demandRequests()
+    {
+        return $this->hasMany(DemandRequest::class, 'buyer_id', 'buyer_id');
     }
 }
