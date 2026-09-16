@@ -83,7 +83,7 @@ export default function ProgramEligibility() {
           <Shield className="w-8 h-8 text-blue-600" />
           Program Eligibility
         </h1>
-        <p className="text-gray-600 mt-1">AI-matched government programs based on your profile</p>
+        <p className="text-gray-600 mt-1">AI-matched government programs batay sa iyong profile</p>
       </div>
 
       {/* Summary Stats */}
@@ -109,7 +109,7 @@ export default function ProgramEligibility() {
         <Card>
           <CardContent className="p-4">
             <div className="text-3xl font-bold text-purple-600">₱75K+</div>
-            <div className="text-sm text-gray-600">Potential Benefits</div>
+            <div className="text-sm text-gray-600">Posibleng Benepisyo</div>
           </CardContent>
         </Card>
       </div>
@@ -147,14 +147,14 @@ export default function ProgramEligibility() {
               <CardContent className="space-y-4">
                 {/* Benefits */}
                 <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-bold text-blue-900 mb-2">Program Benefits</h4>
+                  <h4 className="font-bold text-blue-900 mb-2">Mga Benepisyo ng Program</h4>
                   <p className="text-sm text-blue-800">{program.benefits}</p>
                 </div>
 
                 {/* Requirements */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-bold text-gray-900">Eligibility Requirements</h4>
+                    <h4 className="font-bold text-gray-900">Mga Requirement para sa Eligibility</h4>
                     <span className="text-sm text-gray-600">
                       {completedReqs} of {totalReqs} completed ({Math.round(completionRate)}%)
                     </span>
@@ -190,7 +190,7 @@ export default function ProgramEligibility() {
                 <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
                   <AlertCircle className="w-5 h-5 text-green-600 mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="font-bold text-green-900 mb-1">Next Steps</h4>
+                    <h4 className="font-bold text-green-900 mb-1">Mga Susunod na Hakbang</h4>
                     <p className="text-sm text-green-800">{program.nextSteps}</p>
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export default function ProgramEligibility() {
                 {/* Deadline & Actions */}
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">Deadline:</span> {program.deadline}
+                        <span className="font-medium">Deadline:</span> {program.deadline}
                   </div>
                   <div className="flex gap-2">
                     <Dialog>
@@ -216,13 +216,13 @@ export default function ProgramEligibility() {
                           </DialogHeader>
                           <div className="space-y-6">
                             <div>
-                              <h4 className="font-bold text-gray-900 mb-2">Program Overview</h4>
+                              <h4 className="font-bold text-gray-900 mb-2">Pangkalahatang-ideya ng Program</h4>
                               <p className="text-sm text-gray-600">
                                 Comprehensive support for farmers and fisherfolk through consolidation, protection, and enhancement of programs and services.
                               </p>
                             </div>
                             <div>
-                              <h4 className="font-bold text-gray-900 mb-3">Key Benefits</h4>
+                              <h4 className="font-bold text-gray-900 mb-3">Mga Pangunahing Benepisyo</h4>
                               <ul className="space-y-2">
                                 <li className="flex items-start gap-2 text-sm text-gray-600">
                                   <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
@@ -243,7 +243,7 @@ export default function ProgramEligibility() {
                               </ul>
                             </div>
                             <div>
-                              <h4 className="font-bold text-gray-900 mb-2">Eligibility Requirements</h4>
+                              <h4 className="font-bold text-gray-900 mb-2">Mga Requirement para sa Eligibility</h4>
                               <div className="space-y-2">
                                 {selectedProgram.requirements.map((req, idx) => (
                                   <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
@@ -271,7 +271,7 @@ export default function ProgramEligibility() {
                               </div>
                             </div>
                             <div className="p-4 bg-blue-50 rounded-lg">
-                              <h4 className="font-bold text-blue-900 mb-2">Next Steps</h4>
+                              <h4 className="font-bold text-blue-900 mb-2">Mga Susunod na Hakbang</h4>
                               <p className="text-sm text-blue-800">{selectedProgram.nextSteps}</p>
                             </div>
                             <div className="flex items-center justify-between pt-4 border-t">
@@ -323,7 +323,7 @@ export default function ProgramEligibility() {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-purple-900 mb-2">Need Help with Applications?</h3>
+              <h3 className="font-bold text-purple-900 mb-2">Kailangan ng Tulong sa Applications?</h3>
               <p className="text-sm text-purple-800 mb-3">
                 Our AI system automatically checks your eligibility, but you can also get personalized 
                 assistance from DA/LGU personnel for any program applications.

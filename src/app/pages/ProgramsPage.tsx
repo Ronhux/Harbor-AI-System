@@ -10,7 +10,7 @@ export default function ProgramsPage() {
       id: 1,
       name: 'Sagip Saka Act (RA 11321)',
       icon: Shield,
-      color: 'blue',
+      color: 'navy',
       description: 'Comprehensive support for farmers and fisherfolk through consolidation, protection, and enhancement of programs and services.',
       benefits: [
         'Financial assistance for farming and fishing operations',
@@ -40,7 +40,7 @@ export default function ProgramsPage() {
       id: 3,
       name: 'LGU Direct Procurement',
       icon: Building2,
-      color: 'orange',
+      color: 'teal',
       description: 'Local Government Unit programs for direct procurement from local producers for public institutions and feeding programs.',
       benefits: [
         'Guaranteed institutional buyers',
@@ -55,34 +55,41 @@ export default function ProgramsPage() {
 
   const getColorClasses = (color: string) => {
     const colors: Record<string, { bg: string; text: string; badge: string }> = {
-      blue: { bg: 'bg-blue-100', text: 'text-blue-600', badge: 'bg-blue-500' },
-      cyan: { bg: 'bg-cyan-100', text: 'text-cyan-600', badge: 'bg-cyan-500' },
-      green: { bg: 'bg-green-100', text: 'text-green-600', badge: 'bg-green-500' },
-      purple: { bg: 'bg-purple-100', text: 'text-purple-600', badge: 'bg-purple-500' },
-      orange: { bg: 'bg-orange-100', text: 'text-orange-600', badge: 'bg-orange-500' },
+      navy: { bg: 'bg-[#123C5C]/10', text: 'text-[#123C5C]', badge: 'bg-[#123C5C]' },
+      teal: { bg: 'bg-[#0F9488]/15', text: 'text-[#0F9488]', badge: 'bg-[#0F9488]' },
+      green: { bg: 'bg-[#22C55E]/15', text: 'text-[#22C55E]', badge: 'bg-[#22C55E]' },
+      cyan: { bg: 'bg-[#0E7490]/15', text: 'text-[#0E7490]', badge: 'bg-[#0E7490]' },
     };
-    return colors[color] || colors.blue;
+    return colors[color] || colors.navy;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-[#F5F1E5] font-body">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@400;500;600;700;800&display=swap');
+        .font-display { font-family: 'Anton', ui-sans-serif, sans-serif; }
+        .font-body { font-family: 'Baloo 2', ui-rounded, system-ui, sans-serif; }
+      `}</style>
+
       {/* Navigation */}
-      <nav className="bg-white shadow-sm fixed top-0 left-0 w-full z-50">
+      <nav className="bg-[#F5F1E5]/95 backdrop-blur-sm shadow-sm fixed top-0 left-0 w-full z-50 border-b border-[#E7E1D0]">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between relative">
           <div className="flex items-center gap-3 min-w-0">
             <Link to="/" className="flex items-center gap-2 min-w-0">
               <img src="/logo.png" alt="HarborAI Logo" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
-              <span className="text-xl sm:text-2xl font-bold text-blue-900 whitespace-nowrap">HarborAI</span>
+              <span className="font-display text-xl sm:text-2xl text-[#123C5C] whitespace-nowrap tracking-tight">HarborAI</span>
             </Link>
           </div>
           <div className="flex gap-3 items-center">
             <Link to="/">
-              <Button variant="ghost" className="p-2 flex items-center justify-center" aria-label="Back to Home">
+              <Button variant="ghost" className="p-2 flex items-center justify-center rounded-full text-[#123C5C] hover:bg-[#123C5C]/5" aria-label="Back to Home">
                 <ArrowLeft className="w-6 h-6" />
               </Button>
             </Link>
             <Link to="/login">
-              <Button>Login</Button>
+              <Button variant="outline" className="rounded-full font-bold border-2 border-[#123C5C] text-[#123C5C] hover:bg-[#123C5C] hover:text-white">
+                Login
+              </Button>
             </Link>
           </div>
         </div>
@@ -92,14 +99,14 @@ export default function ProgramsPage() {
       {/* Header */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 bg-[#22C55E] text-white px-4 py-2 rounded-full mb-6 shadow-sm">
             <Brain className="w-4 h-4" />
-            <span className="text-sm font-medium">AI-Powered Program Matching</span>
+            <span className="text-sm font-bold uppercase tracking-wide">AI-Powered Program Matching</span>
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="font-display text-4xl sm:text-5xl text-[#123C5C] mb-6 tracking-tight">
             Government Support Programs
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-[#45586B]">
             HarborAI uses advanced AI to automatically match you with eligible government programs 
             based on your profile, enterprise, and needs. No manual applications required.
           </p>
@@ -114,7 +121,7 @@ export default function ProgramsPage() {
             const colors = getColorClasses(program.color);
             
             return (
-              <Card key={program.id} className="border-2 hover:shadow-lg transition">
+              <Card key={program.id} className="border-2 border-[#E7E1D0] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
@@ -123,10 +130,10 @@ export default function ProgramsPage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <CardTitle className="text-2xl">{program.name}</CardTitle>
+                          <CardTitle className="text-2xl text-[#123C5C]">{program.name}</CardTitle>
                           <Badge className={`${colors.badge} text-white`}>Active</Badge>
                         </div>
-                        <CardDescription className="text-base">
+                        <CardDescription className="text-base text-[#45586B]">
                           {program.description}
                         </CardDescription>
                       </div>
@@ -136,10 +143,10 @@ export default function ProgramsPage() {
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <h4 className="font-bold text-gray-900 mb-3">Key Benefits</h4>
+                      <h4 className="font-bold text-[#123C5C] mb-3">Key Benefits</h4>
                       <ul className="space-y-2">
                         {program.benefits.map((benefit, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                          <li key={idx} className="flex items-start gap-2 text-sm text-[#45586B]">
                             <div className={`w-1.5 h-1.5 rounded-full ${colors.badge} mt-1.5 flex-shrink-0`} />
                             <span>{benefit}</span>
                           </li>
@@ -148,12 +155,12 @@ export default function ProgramsPage() {
                     </div>
                     <div>
                       <div className="mb-4">
-                        <h4 className="font-bold text-gray-900 mb-2">Eligibility</h4>
-                        <p className="text-sm text-gray-600">{program.eligibility}</p>
+                        <h4 className="font-bold text-[#123C5C] mb-2">Eligibility</h4>
+                        <p className="text-sm text-[#45586B]">{program.eligibility}</p>
                       </div>
                       <div>
-                        <h4 className="font-bold text-gray-900 mb-2">Implementing Agency</h4>
-                        <p className="text-sm text-gray-600">{program.agency}</p>
+                        <h4 className="font-bold text-[#123C5C] mb-2">Implementing Agency</h4>
+                        <p className="text-sm text-[#45586B]">{program.agency}</p>
                       </div>
                     </div>
                   </div>
@@ -164,39 +171,39 @@ export default function ProgramsPage() {
         </div>
 
         {/* How It Works */}
-        <Card className="mt-12 bg-gradient-to-r from-blue-50 to-green-50 border-2">
+        <Card className="mt-12 bg-gradient-to-r from-[#22C55E]/5 via-[#0F9488]/5 to-[#123C5C]/5 border-2 border-[#E7E1D0]">
           <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Brain className="w-6 h-6 text-blue-600" />
+            <CardTitle className="text-2xl text-[#123C5C] flex items-center gap-2">
+              <Brain className="w-6 h-6 text-[#0F9488]" />
               How AI-Powered Program Matching Works
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3">
+                <div className="w-10 h-10 bg-[#123C5C] text-white rounded-full flex items-center justify-center font-bold mb-3">
                   1
                 </div>
-                <h4 className="font-bold mb-2">Create Your Profile</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-bold text-[#123C5C] mb-2">Create Your Profile</h4>
+                <p className="text-sm text-[#45586B]">
                   Register and provide information about your enterprise, location, and production capabilities.
                 </p>
               </div>
               <div>
-                <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mb-3">
+                <div className="w-10 h-10 bg-[#22C55E] text-white rounded-full flex items-center justify-center font-bold mb-3">
                   2
                 </div>
-                <h4 className="font-bold mb-2">AI Analyzes Eligibility</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-bold text-[#123C5C] mb-2">AI Analyzes Eligibility</h4>
+                <p className="text-sm text-[#45586B]">
                   Our NLP-powered system automatically matches your profile with program requirements.
                 </p>
               </div>
               <div>
-                <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mb-3">
+                <div className="w-10 h-10 bg-[#0F9488] text-white rounded-full flex items-center justify-center font-bold mb-3">
                   3
                 </div>
-                <h4 className="font-bold mb-2">Get Recommendations</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-bold text-[#123C5C] mb-2">Get Recommendations</h4>
+                <p className="text-sm text-[#45586B]">
                   View personalized program recommendations in your dashboard with application guidance.
                 </p>
               </div>
@@ -205,19 +212,19 @@ export default function ProgramsPage() {
         </Card>
 
         {/* CTA */}
-        <div className="mt-12 text-center bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-2xl p-12">
-          <h3 className="text-3xl font-bold mb-4">Ready to Access These Programs?</h3>
+        <div className="mt-12 text-center bg-gradient-to-r from-[#22C55E] to-[#0F9488] text-white rounded-2xl p-12">
+          <h3 className="font-display text-3xl mb-4 tracking-tight">Ready to Access These Programs?</h3>
           <p className="text-lg mb-6 opacity-90 max-w-2xl mx-auto">
             Register as a producer to receive AI-powered program recommendations tailored to your needs.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link to="/register">
-              <Button size="lg" variant="secondary" className="bg-white text-green-700 hover:bg-gray-100">
+              <Button size="lg" variant="secondary" className="rounded-full font-bold bg-white text-[#15803D] hover:bg-[#F5F1E5]">
                 Register as Producer
               </Button>
             </Link>
             <Link to="/login">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="rounded-full font-bold border-2 border-white text-white hover:bg-white/10">
                 Login to Dashboard
               </Button>
             </Link>

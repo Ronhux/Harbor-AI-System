@@ -6,6 +6,7 @@ use App\Models\Producer;
 use App\Models\ProductListing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProducerController extends Controller
 {
@@ -110,6 +111,7 @@ class ProducerController extends Controller
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'harvest_date' => 'nullable|date',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         $category = $request->input('category');
@@ -141,10 +143,9 @@ class ProducerController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $path = $file->store('public/product_images');
+            $path = $request->file('image')->store('product_images', 'public');
             $data['image_path'] = $path;
-            $data['image_url'] = \Illuminate\Support\Facades\Storage::url($path);
+            $data['image_url'] = Storage::disk('public')->url($path);
         }
 
         $listing = ProductListing::create($data);
@@ -173,6 +174,7 @@ class ProducerController extends Controller
             'location' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:50',
             'harvest_date' => 'nullable|date',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         $updates = [];
@@ -222,10 +224,9 @@ class ProducerController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $path = $file->store('public/product_images');
+            $path = $request->file('image')->store('product_images', 'public');
             $updates['image_path'] = $path;
-            $updates['image_url'] = \Illuminate\Support\Facades\Storage::url($path);
+            $updates['image_url'] = Storage::disk('public')->url($path);
         }
 
         $listing->fill($updates);
@@ -275,7 +276,9 @@ class ProducerController extends Controller
             'views' => 0,
             'orders' => 0,
             'image_path' => $listing->image_path,
-            'image_url' => $listing->image_url,
+            'image_url' => $listing->image_path
+                ? Storage::disk('public')->url(ltrim(str_replace('public/', '', $listing->image_path), '/'))
+                : $listing->image_url,
             'description' => $listing->description,
             'location' => $listing->location,
             'harvest_date' => $listing->harvest_date,

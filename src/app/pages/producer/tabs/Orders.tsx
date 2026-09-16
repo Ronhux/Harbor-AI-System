@@ -175,7 +175,7 @@ export default function Orders() {
           <Package className="w-8 h-8 text-blue-600" />
           Transaction Management
         </h1>
-        <p className="text-gray-600 mt-1">Track your institutional order lifecycle from request through completion</p>
+        <p className="text-gray-600 mt-1">Subaybayan ang lifecycle ng institutional orders mula request hanggang completion</p>
       </div>
 
       {/* Summary Stats */}
@@ -183,7 +183,7 @@ export default function Orders() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-gray-900">{orders.length}</div>
-            <div className="text-sm text-gray-600">Total Orders</div>
+            <div className="text-sm text-gray-600">Kabuuang Orders</div>
           </CardContent>
         </Card>
         <Card>
@@ -199,7 +199,7 @@ export default function Orders() {
             <div className="text-2xl font-bold text-blue-600">
               {filterOrders('Processing').length}
             </div>
-            <div className="text-sm text-gray-600">Processing</div>
+            <div className="text-sm text-gray-600">Pinoproseso</div>
           </CardContent>
         </Card>
         <Card>
@@ -215,7 +215,7 @@ export default function Orders() {
             <div className="text-2xl font-bold text-green-600">
               {filterOrders('Delivered').length}
             </div>
-            <div className="text-sm text-gray-600">Delivered</div>
+            <div className="text-sm text-gray-600">Nai-deliver</div>
           </CardContent>
         </Card>
         <Card>
@@ -223,7 +223,7 @@ export default function Orders() {
             <div className="text-2xl font-bold text-teal-600">
               {filterOrders('Completed').length}
             </div>
-            <div className="text-sm text-gray-600">Completed</div>
+            <div className="text-sm text-gray-600">Nakumpleto</div>
           </CardContent>
         </Card>
       </div>
@@ -231,7 +231,7 @@ export default function Orders() {
       {/* Orders Tabs */}
       <Tabs defaultValue="all" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="all">All Orders</TabsTrigger>
+          <TabsTrigger value="all">Lahat ng Orders</TabsTrigger>
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="Delivered">Delivered</TabsTrigger>
           <TabsTrigger value="Completed">Completed</TabsTrigger>
@@ -272,23 +272,23 @@ export default function Orders() {
       {/* Tips */}
       <Card className="bg-green-50 border-green-200">
         <CardContent className="p-6">
-          <h3 className="font-bold text-green-900 mb-3">Order Management Tips</h3>
+          <h3 className="font-bold text-green-900 mb-3">Tips sa Pamamahala ng Orders</h3>
           <div className="grid md:grid-cols-2 gap-3 text-sm text-green-800">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Respond to new orders within 24 hours</span>
+              <span>Sumagot sa bagong orders sa loob ng 24 oras</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Update order status promptly</span>
+              <span>Agad na i-update ang order status</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Maintain quality standards for repeat orders</span>
+              <span>Panatilihin ang quality standards para sa repeat orders</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Communicate delivery delays early</span>
+              <span>Ipaalam agad ang mga delay sa delivery</span>
             </div>
           </div>
         </CardContent>
@@ -299,14 +299,14 @@ export default function Orders() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Order Details - {selectedOrder?.id}</DialogTitle>
-            <DialogDescription>Complete information about this order</DialogDescription>
+            <DialogDescription>Kumpletong impormasyon tungkol sa order na ito</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-2">Order Information</h4>
+                    <h4 className="font-bold text-gray-900 mb-2">Impormasyon ng Order</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Order ID:</span>
@@ -337,7 +337,7 @@ export default function Orders() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-2">Status & Payment</h4>
+                    <h4 className="font-bold text-gray-900 mb-2">Status at Payment</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Order Status:</span>
@@ -360,7 +360,7 @@ export default function Orders() {
                 </div>
               </div>
               <div className="pt-4 border-t">
-                <h4 className="font-bold text-gray-900 mb-3">Order Timeline</h4>
+                <h4 className="font-bold text-gray-900 mb-3">Timeline ng Order</h4>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -369,7 +369,7 @@ export default function Orders() {
                   {selectedOrder.status !== 'Pending' && (
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm">Order accepted and processing</span>
+                      <span className="text-sm">Na-accept at pinoproseso ang order</span>
                     </div>
                   )}
                   {['In Transit', 'Delivered'].includes(selectedOrder.status) && (
@@ -381,13 +381,13 @@ export default function Orders() {
                   {selectedOrder.status === 'Delivered' && (
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Order delivered successfully</span>
+                      <span className="text-sm">Matagumpay na na-deliver ang order</span>
                     </div>
                   )}
                   {selectedOrder.status === 'Cancelled' && (
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span className="text-sm">Order cancelled</span>
+                      <span className="text-sm">Kinansela ang order</span>
                     </div>
                   )}
                 </div>

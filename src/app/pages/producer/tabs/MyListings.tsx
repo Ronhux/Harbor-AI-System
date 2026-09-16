@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, Package, TrendingUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Package, TrendingUp, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog';
@@ -24,65 +25,13 @@ type Listing = {
   raw?: any;
 };
 
-const defaultListings: Listing[] = [
-  {
-    id: 1,
-    name: 'Premium Organic Rice',
-    category: 'Grains',
-    price: 125,
-    unit: 'kg',
-    quantity: 500,
-    status: 'Active',
-    views: 245,
-    orders: 12,
-    image: '🌾',
-  },
-  {
-    id: 2,
-    name: 'Fresh Tilapia',
-    category: 'Fish',
-    price: 180,
-    unit: 'kg',
-    quantity: 200,
-    status: 'Active',
-    views: 189,
-    orders: 8,
-    image: '🐟',
-  },
-  {
-    id: 3,
-    name: 'Organic Corn',
-    category: 'Grains',
-    price: 45,
-    unit: 'kg',
-    quantity: 800,
-    status: 'Active',
-    views: 156,
-    orders: 6,
-    image: '🌽',
-  },
-  {
-    id: 4,
-    name: 'Mixed Vegetables',
-    category: 'Vegetables',
-    price: 60,
-    unit: 'kg',
-    quantity: 150,
-    status: 'Low Stock',
-    views: 98,
-    orders: 4,
-    image: '🥬',
-  },
-];
-
 const resolveImageUrl = (value: string | null | undefined) => {
   if (!value) return null;
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
-  if (value.startsWith('/')) {
-    const backendBase = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
-    return `${backendBase}${value}`;
-  }
-  return value;
+  const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '').replace(/\/api$/, '');
+  const normalizedValue = value.replace(/^\/+/, '').replace(/^public\//, '');
+  const storagePath = normalizedValue.startsWith('storage/') ? normalizedValue : `storage/${normalizedValue}`;
+  return configuredApiUrl ? `${configuredApiUrl}/${storagePath}` : `/${storagePath}`;
 };
 
 const normalizeListing = (item: any): Listing => {
@@ -103,40 +52,68 @@ const normalizeListing = (item: any): Listing => {
     status,
     views: Number(item.views ?? 0),
     orders: Number(item.orders ?? 0),
-    image: item.image || getProductEmoji(category),
+    image: item.image,
     image_url: imageUrl,
     image_path: item.image_path || item.imagePath || null,
     raw: item,
   };
 };
 
-const getProductEmoji = (category: string) => {
-  const map: Record<string, string> = {
-    grains: '🌾',
-    fish: '🐟',
-    vegetables: '🥬',
-    fruits: '🍋',
-    livestock: '🐄',
-    poultry: '🐔',
-  };
-  const normalized = String(category || '').toLowerCase();
-  return map[normalized] || '📦';
-};
-
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    Active: 'bg-green-500',
-    'Low Stock': 'bg-yellow-500',
+    Active: 'bg-[#22C55E]',
+    'Low Stock': 'bg-[#F59E0B]',
     'Out of Stock': 'bg-red-500',
-    Draft: 'bg-gray-500',
-    available: 'bg-green-500',
-    inactive: 'bg-gray-500',
+    Draft: 'bg-[#123C5C]',
+    available: 'bg-[#22C55E]',
+    inactive: 'bg-[#123C5C]',
   };
-  return colors[status] || 'bg-gray-500';
+  return colors[status] || 'bg-[#123C5C]';
+};
+
+function ListingImage({ src, alt, className = '' }: { src?: string | null; alt: string; className?: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [src]);
+
+  if (src && !imageFailed) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full aspect-[4/3] object-cover rounded-lg ${className}`}
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`w-full aspect-[4/3] rounded-lg bg-[#0F9488]/5 text-[#0F9488] flex items-center justify-center ${className}`} aria-label="No product image">
+      <Package className="w-12 h-12" aria-hidden="true" />
+    </div>
+  );
+}
+
+const getListingImageUrl = (listing?: Listing | null) => {
+  if (!listing) return null;
+
+  return resolveImageUrl(
+    listing.image_url
+      || listing.image_path
+      || listing.raw?.image_url
+      || listing.raw?.imageUrl
+      || listing.raw?.image_path
+      || listing.raw?.imagePath
+      || null,
+  );
 };
 
 export default function MyListings() {
-  const [listings, setListings] = useState<Listing[]>(defaultListings);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [listingSearch, setListingSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
@@ -156,6 +133,15 @@ export default function MyListings() {
   useEffect(() => {
     fetchListings();
   }, []);
+
+  const categories = Array.from(new Set(listings.map((listing) => listing.category))).sort();
+  const normalizedSearch = listingSearch.trim().toLowerCase();
+  const filteredListings = listings.filter((listing) => {
+    const matchesSearch = [listing.name, listing.category]
+      .some((value) => value.toLowerCase().includes(normalizedSearch));
+    const matchesCategory = selectedCategory === 'all' || listing.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleEdit = (listing: Listing) => {
     setEditingListing({
@@ -191,12 +177,16 @@ export default function MyListings() {
     }
   };
 
-  const addListingToState = (item: any) => {
-    const nextItem = normalizeListing(item);
+  // `item` here is already a normalized Listing (ListingForm normalizes the API
+  // response itself before calling onSave), so we use it directly instead of
+  // re-running normalizeListing on it — re-normalizing an already-normalized
+  // object looked up raw-API field names like `listing_id` that don't exist on
+  // it, which is fragile and was a likely source of listings losing data.
+  const addListingToState = (item: Listing) => {
     setListings((current) => {
-      const exists = current.some((entry) => entry.id === nextItem.id);
-      if (!exists) return [nextItem, ...current];
-      return current.map((entry) => (entry.id === nextItem.id ? nextItem : entry));
+      const exists = current.some((entry) => entry.id === item.id);
+      if (!exists) return [item, ...current];
+      return current.map((entry) => (entry.id === item.id ? item : entry));
     });
   };
 
@@ -204,24 +194,24 @@ export default function MyListings() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Package className="w-8 h-8 text-green-600" />
+          <h1 className="font-display text-2xl sm:text-3xl text-[#123C5C] tracking-tight flex items-center gap-3">
+            <Package className="w-8 h-8 text-[#22C55E]" />
             My Digital Stall
           </h1>
-          <p className="text-gray-600 mt-1">Manage your product listings and inventory</p>
+          <p className="text-[#45586B] mt-1">Pamahalaan ang iyong product listings at inventory</p>
         </div>
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button className="rounded-full font-bold bg-[#22C55E] hover:bg-[#15803D]">
               <Plus className="w-4 h-4 mr-2" />
-              Add New Listing
+              Magdagdag ng Listing
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create New Product Listing</DialogTitle>
-              <DialogDescription>Add a new product to your digital stall</DialogDescription>
+              <DialogTitle>Gumawa ng Bagong Product Listing</DialogTitle>
+              <DialogDescription>Magdagdag ng produkto sa iyong digital stall</DialogDescription>
             </DialogHeader>
             <ListingForm
               mode="create"
@@ -237,37 +227,37 @@ export default function MyListings() {
         <Dialog open={!!viewingListing} onOpenChange={() => setViewingListing(null)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Product Details</DialogTitle>
+              <DialogTitle>Detalye ng Produkto</DialogTitle>
             </DialogHeader>
             {viewingListing && (
               <div className="space-y-4">
                 <div className="text-center">
-                  <div className="text-6xl mb-4">{viewingListing.image_url ? <img src={viewingListing.image_url} alt={viewingListing.name} className="w-24 h-24 object-cover rounded-lg mx-auto" /> : viewingListing.image}</div>
-                  <h3 className="text-xl font-bold">{viewingListing.name}</h3>
-                  <p className="text-gray-600">{viewingListing.category}</p>
+                  <ListingImage src={getListingImageUrl(viewingListing)} alt={viewingListing.name} className="max-w-sm mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-[#123C5C]">{viewingListing.name}</h3>
+                  <p className="text-[#45586B]">{viewingListing.category}</p>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Price:</span>
-                    <span className="font-bold text-green-600">₱{viewingListing.price} per {viewingListing.unit}</span>
+                    <span className="text-[#45586B]">Presyo:</span>
+                    <span className="font-bold text-[#22C55E]">₱{viewingListing.price} bawat {viewingListing.unit}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Available Quantity:</span>
-                    <span className="font-bold">{viewingListing.quantity} {viewingListing.unit}</span>
+                    <span className="text-[#45586B]">Available na Quantity:</span>
+                    <span className="font-bold text-[#123C5C]">{viewingListing.quantity} {viewingListing.unit}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Status:</span>
+                    <span className="text-[#45586B]">Status:</span>
                     <Badge className={getStatusColor(viewingListing.status) + ' text-white'}>
                       {viewingListing.status}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Views:</span>
-                    <span className="font-bold">{viewingListing.views}</span>
+                    <span className="text-[#45586B]">Views:</span>
+                    <span className="font-bold text-[#123C5C]">{viewingListing.views}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Orders:</span>
-                    <span className="font-bold">{viewingListing.orders}</span>
+                    <span className="text-[#45586B]">Orders:</span>
+                    <span className="font-bold text-[#123C5C]">{viewingListing.orders}</span>
                   </div>
                 </div>
               </div>
@@ -277,90 +267,112 @@ export default function MyListings() {
       </div>
 
       <div className="grid md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border border-[#E7E1D0]">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-gray-900">{listings.length}</div>
-            <div className="text-sm text-gray-600">Total Listings</div>
+            <div className="text-2xl font-bold text-[#123C5C]">{listings.length}</div>
+            <div className="text-sm text-[#45586B]">Kabuuang Listings</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border border-[#E7E1D0]">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-[#22C55E]">
               {listings.filter((listing) => String(listing.status).toLowerCase() === 'active' || String(listing.status).toLowerCase() === 'available').length}
             </div>
-            <div className="text-sm text-gray-600">Active Products</div>
+            <div className="text-sm text-[#45586B]">Active na Produkto</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border border-[#E7E1D0]">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">{listings.reduce((sum, listing) => sum + listing.views, 0)}</div>
-            <div className="text-sm text-gray-600">Total Views</div>
+            <div className="text-2xl font-bold text-[#0F9488]">{listings.reduce((sum, listing) => sum + listing.views, 0)}</div>
+            <div className="text-sm text-[#45586B]">Kabuuang Views</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border border-[#E7E1D0]">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-purple-600">{listings.reduce((sum, listing) => sum + listing.orders, 0)}</div>
-            <div className="text-sm text-gray-600">Total Orders</div>
+            <div className="text-2xl font-bold text-[#0E7490]">{listings.reduce((sum, listing) => sum + listing.orders, 0)}</div>
+            <div className="text-sm text-[#45586B]">Kabuuang Orders</div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {listings.map((listing) => (
-          <Card key={listing.id} className="border-2 hover:shadow-lg transition">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between mb-2">
-                <div className="text-4xl">{listing.image_url ? <img src={listing.image_url} alt={listing.name} className="w-12 h-12 object-cover rounded-lg" /> : listing.image}</div>
-                <Badge className={getStatusColor(listing.status) + ' text-white'}>{listing.status}</Badge>
-              </div>
-              <CardTitle className="text-xl">{listing.name}</CardTitle>
-              <CardDescription>{listing.category}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-green-600">₱{listing.price}</span>
-                <span className="text-gray-600">per {listing.unit}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Available:</span>
-                <span className="font-bold text-gray-900">{listing.quantity} {listing.unit}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <div className="text-sm font-bold text-gray-900">{listing.views}</div>
-                    <div className="text-xs text-gray-600">Views</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <div>
-                    <div className="text-sm font-bold text-gray-900">{listing.orders}</div>
-                    <div className="text-xs text-gray-600">Orders</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-3 border-t">
-                <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(listing)}>
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleView(listing)}>
-                  <Eye className="w-4 h-4 mr-1" />
-                  View
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(listing.id)}>
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="overflow-hidden border-[#E7E1D0] bg-white shadow-sm">
+        <CardHeader className="border-b border-[#E7E1D0]/70 bg-[#F5F1E5]/45">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <CardTitle className="font-display text-2xl text-[#123C5C]">My Digital Stall</CardTitle>
+              <CardDescription className="mt-2">Manage your products and listings.</CardDescription>
+            </div>
+          </div>
+          <div className="grid gap-3 pt-2 md:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#45586B]" aria-hidden="true" />
+              <Input
+                value={listingSearch}
+                onChange={(event) => setListingSearch(event.target.value)}
+                placeholder="Search products..."
+                aria-label="Search listings"
+                className="border-[#E7E1D0] bg-white pl-9 text-[#123C5C] focus-visible:ring-[#22C55E]"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="border-[#E7E1D0] bg-white text-[#123C5C] focus:ring-[#22C55E]">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6">
+          {listings.length === 0 ? (
+            <p className="py-8 text-center text-sm text-[#45586B]">Wala ka pang listings.</p>
+          ) : filteredListings.length === 0 ? (
+            <p className="py-8 text-center text-sm text-[#45586B]">No products found.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {filteredListings.map((listing) => (
+                <Card key={listing.id} className="overflow-hidden border border-[#E7E1D0] bg-white shadow-sm transition-shadow hover:shadow-md">
+                  <ListingImage src={getListingImageUrl(listing)} alt={listing.name} className="rounded-none" />
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <CardTitle className="truncate text-lg text-[#123C5C]">{listing.name}</CardTitle>
+                        <CardDescription className="mt-1">{listing.category}</CardDescription>
+                      </div>
+                      <Badge className={`${getStatusColor(listing.status)} shrink-0 text-white`}>{listing.status}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-bold text-[#22C55E]">₱{listing.price.toLocaleString()}</span>
+                      <span className="text-sm text-[#45586B]">per {listing.unit}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#45586B]">Available quantity</span>
+                      <span className="font-bold text-[#123C5C]">{listing.quantity} {listing.unit}</span>
+                    </div>
+                    <div className="flex gap-2 border-t border-[#E7E1D0] pt-3">
+                      <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => handleView(listing)}>
+                        <Eye className="mr-1 h-4 w-4" />
+                        View
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(listing)}>
+                        <Edit className="mr-1 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" aria-label={`Delete ${listing.name}`} onClick={() => handleDelete(listing.id)}>
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog
         open={isEditOpen}
@@ -373,8 +385,8 @@ export default function MyListings() {
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Product Listing</DialogTitle>
-            <DialogDescription>Update the listing details and inventory</DialogDescription>
+            <DialogTitle>I-edit ang Product Listing</DialogTitle>
+            <DialogDescription>I-update ang detalye ng listing at inventory</DialogDescription>
           </DialogHeader>
           {editingListing && (
             <ListingForm
@@ -386,13 +398,7 @@ export default function MyListings() {
                 setEditingListing(null);
               }}
               onSave={async (item) => {
-                const updatedId = Number(item.listing_id ?? item.id ?? 0);
-                const nextItem = normalizeListing(item);
-                setListings((current) => {
-                  const hasMatch = current.some((entry) => entry.id === updatedId);
-                  if (!hasMatch) return [nextItem, ...current];
-                  return current.map((entry) => (entry.id === updatedId ? nextItem : entry));
-                });
+                addListingToState(item);
                 await fetchListings();
                 setEditingListing(null);
                 setIsEditOpen(false);
@@ -402,25 +408,25 @@ export default function MyListings() {
         </DialogContent>
       </Dialog>
 
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-[#0F9488]/5 border-[#0F9488]/30">
         <CardContent className="p-6">
-          <h3 className="font-bold text-blue-900 mb-3">Tips for Better Listings</h3>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-800">
+          <h3 className="font-bold text-[#123C5C] mb-3">Tips para sa Mas Maayos na Listings</h3>
+          <div className="grid md:grid-cols-2 gap-4 text-sm text-[#0B4842]">
             <div className="flex items-start gap-2">
-              <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">1</div>
-              <span>Use clear, descriptive product names that highlight quality</span>
+              <div className="w-5 h-5 bg-[#0F9488] text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">1</div>
+              <span>Gumamit ng malinaw at descriptive na product names na nagpapakita ng quality</span>
             </div>
             <div className="flex items-start gap-2">
-              <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">2</div>
-              <span>Keep pricing competitive based on AI insights</span>
+              <div className="w-5 h-5 bg-[#0F9488] text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">2</div>
+              <span>Panatilihing competitive ang pricing batay sa AI insights</span>
             </div>
             <div className="flex items-start gap-2">
-              <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">3</div>
-              <span>Update inventory regularly to maintain buyer trust</span>
+              <div className="w-5 h-5 bg-[#0F9488] text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">3</div>
+              <span>Regular na i-update ang inventory para mapanatili ang tiwala ng buyers</span>
             </div>
             <div className="flex items-start gap-2">
-              <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">4</div>
-              <span>Mention certifications and quality standards</span>
+              <div className="w-5 h-5 bg-[#0F9488] text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">4</div>
+              <span>Banggitin ang certifications at quality standards</span>
             </div>
           </div>
         </CardContent>
@@ -438,7 +444,7 @@ function ListingForm({
   mode: 'create' | 'edit';
   existingListing?: Listing | null;
   onCancel: () => void;
-  onSave: (item: any) => void;
+  onSave: (item: Listing) => void;
 }) {
   const [productName, setProductName] = useState(existingListing?.name || '');
   const [category, setCategory] = useState((existingListing?.category || 'grains').toLowerCase());
@@ -447,6 +453,7 @@ function ListingForm({
   const [unit, setUnit] = useState(existingListing?.unit || 'kg');
   const [quantity, setQuantity] = useState<number | ''>(existingListing?.quantity ?? '');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(getListingImageUrl(existingListing));
 
   useEffect(() => {
     if (!existingListing) return;
@@ -456,11 +463,20 @@ function ListingForm({
     setPrice(existingListing.price ?? '');
     setUnit(existingListing.unit || 'kg');
     setQuantity(existingListing.quantity ?? '');
+    setImageFile(null);
+    setImagePreview(getListingImageUrl(existingListing));
   }, [existingListing, mode]);
+
+  useEffect(() => {
+    if (!imageFile) return;
+    const objectUrl = URL.createObjectURL(imageFile);
+    setImagePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [imageFile]);
 
   const handleSubmit = async () => {
     if (!productName.trim() || price === '' || quantity === '') {
-      alert('Please complete the product name, price, and quantity fields.');
+      alert('Kumpletuhin ang product name, price, at quantity fields.');
       return;
     }
 
@@ -468,7 +484,7 @@ function ListingForm({
     const numericQuantity = Number(quantity);
 
     if (Number.isNaN(numericPrice) || Number.isNaN(numericQuantity)) {
-      alert('Price and quantity must be valid numbers.');
+      alert('Dapat valid numbers ang price at quantity.');
       return;
     }
 
@@ -492,7 +508,8 @@ function ListingForm({
       try {
         const { request } = await import('../../../../lib/api');
         const endpoint = mode === 'edit' && existingListing ? `/api/producer/listings/${existingListing.id}` : '/api/producer/listings';
-        const method = mode === 'edit' ? 'PUT' : 'POST';
+        const method = mode === 'edit' ? 'POST' : 'POST';
+        if (mode === 'edit') form.append('_method', 'PUT');
         const data = await request(endpoint, { method, body: form });
         const responseData = data.listing || data.data || data;
         const nextItem = normalizeListing(responseData);
@@ -512,6 +529,12 @@ function ListingForm({
       const data = await request(endpoint, { method, body: payload });
       const responseData = data.listing || data.data || data;
       const nextItem = normalizeListing(responseData);
+      // No new file was uploaded in this save, so if the update response
+      // doesn't include an image field, keep showing the listing's existing
+      // photo instead of silently blanking it out.
+      if (!nextItem.image_url && existingListing?.image_url) {
+        nextItem.image_url = existingListing.image_url;
+      }
       onSave(nextItem);
       alert(mode === 'edit' ? 'Listing updated' : 'Listing created');
     } catch (err: any) {
@@ -529,7 +552,7 @@ function ListingForm({
         </div>
         <div>
           <Label htmlFor="category">Category</Label>
-          <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="block w-full border rounded p-2">
+          <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="block w-full border border-[#E7E1D0] rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#22C55E]">
             <option value="grains">Grains</option>
             <option value="fish">Fish</option>
             <option value="vegetables">Vegetables</option>
@@ -541,7 +564,7 @@ function ListingForm({
 
       <div>
         <Label htmlFor="description">Description</Label>
-        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Describe your product" />
+        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Ilarawan ang iyong produkto" />
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
@@ -551,7 +574,7 @@ function ListingForm({
         </div>
         <div>
           <Label htmlFor="unit">Unit</Label>
-          <select id="unit" value={unit} onChange={(e) => setUnit(e.target.value)} className="block w-full border rounded p-2">
+          <select id="unit" value={unit} onChange={(e) => setUnit(e.target.value)} className="block w-full border border-[#E7E1D0] rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#22C55E]">
             <option value="kg">Kilogram (kg)</option>
             <option value="g">Gram (g)</option>
             <option value="sack">Sack</option>
@@ -559,19 +582,25 @@ function ListingForm({
           </select>
         </div>
         <div>
-          <Label htmlFor="quantity">Available Quantity</Label>
+          <Label htmlFor="quantity">Available na Quantity</Label>
           <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))} placeholder="500" />
         </div>
       </div>
 
       <div>
         <Label htmlFor="imageInput">Product Image</Label>
-        <input id="imageInput" type="file" accept="image/*" className="mt-2" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+        <input id="imageInput" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" className="mt-2" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+        {imagePreview && (
+          <div className="mt-3 max-w-xs">
+            <ListingImage src={imagePreview} alt="Selected product preview" />
+          </div>
+        )}
+        {!imagePreview && <p className="mt-2 text-sm text-[#45586B]">Walang napiling image. HarborAI placeholder ang ipapakita.</p>}
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button className="bg-green-600 hover:bg-green-700" onClick={handleSubmit}>{mode === 'edit' ? 'Save Changes' : 'Create Listing'}</Button>
+        <Button variant="outline" className="rounded-full" onClick={onCancel}>Kanselahin</Button>
+        <Button className="rounded-full font-bold bg-[#22C55E] hover:bg-[#15803D]" onClick={handleSubmit}>{mode === 'edit' ? 'I-save ang Changes' : 'Gumawa ng Listing'}</Button>
       </div>
     </div>
   );

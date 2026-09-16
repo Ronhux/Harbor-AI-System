@@ -149,7 +149,7 @@ export default function Orders() {
 
   const getProducerName = (producer?: Producer) => {
     if (!producer) {
-      return 'Unknown Producer';
+      return 'Hindi kilalang Producer';
     }
 
     if (producer.name) {
@@ -157,7 +157,7 @@ export default function Orders() {
     }
 
     return `${producer.first_name ?? ''} ${producer.last_name ?? ''}`.trim()
-      || 'Unknown Producer';
+      || 'Hindi kilalang Producer';
   };
 
   const formatAmount = (amount: number | string) => {
@@ -171,11 +171,11 @@ export default function Orders() {
     return (
       <div className="p-6">
         <h1 className="text-3xl font-bold text-gray-900">
-          My Orders
+          Aking Orders
         </h1>
 
         <p className="text-gray-600 mt-2">
-          Loading your orders...
+          Nilo-load ang iyong orders...
         </p>
       </div>
     );
@@ -187,11 +187,11 @@ export default function Orders() {
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          My Orders
+          Aking Orders
         </h1>
 
         <p className="text-gray-600 mt-1">
-          Track your institutional order lifecycle
+          Subaybayan ang lifecycle ng iyong institutional orders
         </p>
       </div>
 
@@ -213,11 +213,11 @@ export default function Orders() {
             <Package className="w-12 h-12 mx-auto text-gray-400 mb-3" />
 
             <h3 className="font-semibold text-gray-900">
-              No orders yet
+              Wala pang orders
             </h3>
 
             <p className="text-gray-500 mt-1">
-              Your purchased products will appear here.
+              Lalabas dito ang iyong mga nabiling produkto.
             </p>
           </CardContent>
         </Card>
@@ -319,7 +319,7 @@ export default function Orders() {
                         setSelectedOrder(order)
                       }
                     >
-                      View Details
+                      Tingnan ang Detalye
                     </Button>
 
                   </div>
@@ -353,7 +353,7 @@ export default function Orders() {
             </DialogTitle>
 
             <DialogDescription>
-              Complete information about this order
+              Kumpletong impormasyon tungkol sa order na ito
             </DialogDescription>
 
           </DialogHeader>
@@ -370,7 +370,7 @@ export default function Orders() {
                   <div>
 
                     <h4 className="font-bold text-gray-900 mb-2">
-                      Order Information
+                      Impormasyon ng Order
                     </h4>
 
                     <div className="space-y-2 text-sm">
@@ -387,7 +387,7 @@ export default function Orders() {
 
                       <div className="flex justify-between">
                         <span className="text-gray-600">
-                          Order Date:
+                          Petsa ng Order:
                         </span>
 
                         <span className="font-medium">
@@ -417,7 +417,7 @@ export default function Orders() {
                   <div>
 
                     <h4 className="font-bold text-gray-900 mb-2">
-                      Status & Payment
+                      Status at Payment
                     </h4>
 
                     <div className="space-y-3 text-sm">
@@ -425,7 +425,7 @@ export default function Orders() {
                       <div className="flex justify-between items-center">
 
                         <span className="text-gray-600">
-                          Order Status:
+                          Status ng Order:
                         </span>
 
                         <Badge
@@ -453,7 +453,7 @@ export default function Orders() {
                       <div className="flex justify-between">
 
                         <span className="text-gray-600">
-                          Total Amount:
+                          Kabuuang Halaga:
                         </span>
 
                         <span className="font-bold text-green-600 text-lg">
@@ -476,7 +476,7 @@ export default function Orders() {
               <div className="pt-4 border-t">
 
                 <h4 className="font-bold text-gray-900 mb-3">
-                  Ordered Products
+                  Mga Na-order na Produkto
                 </h4>
 
                 <div className="space-y-3">

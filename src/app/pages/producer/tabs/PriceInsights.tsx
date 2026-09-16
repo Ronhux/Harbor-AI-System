@@ -88,7 +88,7 @@ export default function PriceInsights() {
           <TrendingUp className="w-8 h-8 text-green-600" />
           Smart Pricing Prompts & Market Analysis
         </h1>
-        <p className="text-gray-600 mt-1">AI-assisted pricing prompts and market signals for July through November.</p>
+        <p className="text-gray-600 mt-1">AI-assisted pricing prompts at market signals mula July hanggang November.</p>
       </div>
 
       {/* Market Trends */}
@@ -96,7 +96,7 @@ export default function PriceInsights() {
         <Card>
           <CardHeader>
             <CardTitle>Price Trends (July - November)</CardTitle>
-            <CardDescription>Market prices per kilogram</CardDescription>
+            <CardDescription>Market prices bawat kilo</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -118,7 +118,7 @@ export default function PriceInsights() {
         <Card>
           <CardHeader>
             <CardTitle>Demand Forecast</CardTitle>
-            <CardDescription>Projected vs current demand (kg)</CardDescription>
+            <CardDescription>Projected kumpara sa current demand (kg)</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -139,8 +139,8 @@ export default function PriceInsights() {
       {/* Product Price Analysis */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Products - Price Analysis</CardTitle>
-          <CardDescription>AI pricing prompts based on market conditions</CardDescription>
+          <CardTitle>Iyong Mga Produkto - Price Analysis</CardTitle>
+          <CardDescription>AI pricing prompts batay sa market conditions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -163,7 +163,7 @@ export default function PriceInsights() {
 
                 <div className="grid md:grid-cols-3 gap-4 mb-3">
                   <div>
-                    <div className="text-xs text-gray-600 mb-1">Your Price</div>
+                    <div className="text-xs text-gray-600 mb-1">Iyong Presyo</div>
                     <div className="text-xl font-bold text-blue-600">₱{product.currentPrice}/kg</div>
                   </div>
                   <div>
@@ -171,7 +171,7 @@ export default function PriceInsights() {
                     <div className="text-xl font-bold text-gray-900">₱{product.marketAvg}/kg</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-600 mb-1">Price Difference</div>
+                    <div className="text-xs text-gray-600 mb-1">Pagkakaiba ng Presyo</div>
                     <div className={`text-xl font-bold ${product.currentPrice > product.marketAvg ? 'text-red-600' : 'text-green-600'}`}>
                       {product.currentPrice > product.marketAvg ? '+' : ''}₱{product.currentPrice - product.marketAvg}/kg
                     </div>
@@ -195,7 +195,7 @@ export default function PriceInsights() {
       <Card>
         <CardHeader>
           <CardTitle>Market Insights & Opportunities</CardTitle>
-          <CardDescription>Strategic insights based on market analysis</CardDescription>
+          <CardDescription>Strategic insights batay sa market analysis</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -214,7 +214,7 @@ export default function PriceInsights() {
                 <div className="flex items-start gap-2 p-3 bg-green-50 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-green-800">
-                    <span className="font-medium">Recommended Action:</span> {insight.action}
+                    <span className="font-medium">Inirerekomendang Action:</span> {insight.action}
                   </div>
                 </div>
               </div>
@@ -231,7 +231,7 @@ export default function PriceInsights() {
               <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-purple-900 mb-2">Upcoming Market Events</h3>
+              <h3 className="font-bold text-purple-900 mb-2">Mga Paparating na Market Events</h3>
               <ul className="space-y-2 text-sm text-purple-800">
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-1.5" />

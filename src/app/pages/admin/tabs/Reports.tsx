@@ -15,10 +15,10 @@ export default function Reports() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
-          <p className="text-gray-600 mt-1">Generate and download system reports</p>
+          <h1 className="font-display text-2xl sm:text-3xl text-[#123C5C] tracking-tight">Reports</h1>
+          <p className="text-[#45586B] mt-1">Generate and download system reports</p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => alert('Report generation feature not yet implemented. This would open a form to select report type and parameters.')}>
+        <Button className="rounded-full bg-[#22C55E] hover:bg-[#15803D]" onClick={() => alert('Report generation feature not yet implemented. This would open a form to select report type and parameters.')}>
           <Calendar className="w-4 h-4 mr-2" />
           Generate New Report
         </Button>
@@ -26,19 +26,19 @@ export default function Reports() {
 
       <div className="space-y-3">
         {reports.map((report) => (
-          <Card key={report.id} className="border-2 hover:shadow-md transition">
+          <Card key={report.id} className="border-2 border-[#E7E1D0] hover:shadow-md transition-shadow duration-300">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <ClipboardList className="w-6 h-6 text-purple-600" />
+                  <div className="w-12 h-12 bg-[#0F9488]/15 rounded-lg flex items-center justify-center">
+                    <ClipboardList className="w-6 h-6 text-[#0F9488]" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900">{report.name}</h3>
+                      <h3 className="font-bold text-[#123C5C]">{report.name}</h3>
                       <Badge variant="secondary">{report.type}</Badge>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-[#45586B]">
                       {report.period} • Generated {report.generated} • {report.size}
                     </div>
                   </div>

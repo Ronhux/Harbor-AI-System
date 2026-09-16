@@ -3,6 +3,8 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProgramsPage from "./pages/ProgramsPage";
+import FaqPage from "./pages/FaqPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProducerDashboard from "./pages/producer/ProducerDashboard";
 import BuyerDashboard from "./pages/buyer/BuyerDashboard";
@@ -25,6 +27,14 @@ export const router = createBrowserRouter([
   {
     path: "/programs",
     element: <ProgramsPage />,
+  },
+  {
+    path: "/faq",
+    element: <FaqPage />,
+  },
+  {
+    path: "/privacy",
+    element: <PrivacyPolicyPage />,
   },
   {
     path: "/backlog",

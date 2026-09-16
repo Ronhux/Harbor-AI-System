@@ -23,10 +23,10 @@ export default function ProcurementNeeds() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Supply & Demand Monitoring</h1>
-          <p className="text-gray-600 mt-1">Monitor institutional buyer demand and producer availability without executing transactions.</p>
+          <h1 className="font-display text-2xl sm:text-3xl text-[#123C5C] tracking-tight">Supply &amp; Demand Monitoring</h1>
+          <p className="text-[#45586B] mt-1">Monitor institutional buyer demand and producer availability without executing transactions.</p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => setShowNewProcurement(true)}>
+        <Button className="rounded-full bg-[#22C55E] hover:bg-[#15803D]" onClick={() => setShowNewProcurement(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Demand Notice
         </Button>
@@ -34,32 +34,32 @@ export default function ProcurementNeeds() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {procurements.map((proc) => (
-          <Card key={proc.id} className="border-2">
+          <Card key={proc.id} className="border-2 border-[#E7E1D0] hover:shadow-md transition-shadow duration-300">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-lg">{proc.product}</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">{proc.buyer}</p>
+                  <p className="text-sm text-[#45586B] mt-1">{proc.buyer}</p>
                 </div>
-                <Badge className={proc.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'}>
+                <Badge className={proc.status === 'Active' ? 'bg-[#22C55E]' : 'bg-[#123C5C]'}>
                   {proc.status}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Quantity:</span>
-                <span className="font-medium">{proc.quantity}</span>
+                <span className="text-[#45586B]">Quantity:</span>
+                <span className="font-medium text-[#123C5C]">{proc.quantity}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Deadline:</span>
-                <span className="font-medium">{proc.deadline}</span>
+                <span className="text-[#45586B]">Deadline:</span>
+                <span className="font-medium text-[#123C5C]">{proc.deadline}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Matching Producers:</span>
-                <span className="font-bold text-blue-600">{proc.matches}</span>
+                <span className="text-[#45586B]">Matching Producers:</span>
+                <span className="font-bold text-[#0F9488]">{proc.matches}</span>
               </div>
-              <div className="flex gap-2 pt-3 border-t">
+              <div className="flex gap-2 pt-3 border-t border-[#E7E1D0]">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedProcurement(proc)}>
                   <Edit className="w-4 h-4 mr-1" />
                   Edit
@@ -118,8 +118,8 @@ export default function ProcurementNeeds() {
               <Input type="date" />
             </div>
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowNewProcurement(false)} className="flex-1">Cancel</Button>
-              <Button className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={() => { alert('Demand notice added successfully!'); setShowNewProcurement(false); }}>Add Demand Notice</Button>
+              <Button variant="outline" onClick={() => setShowNewProcurement(false)} className="flex-1 rounded-full">Cancel</Button>
+              <Button className="flex-1 rounded-full bg-[#22C55E] hover:bg-[#15803D]" onClick={() => { alert('Demand notice added successfully!'); setShowNewProcurement(false); }}>Add Demand Notice</Button>
             </div>
           </div>
         </DialogContent>
@@ -134,38 +134,38 @@ export default function ProcurementNeeds() {
           </DialogHeader>
           {selectedProcurement && (
             <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-bold mb-2">Demand Notice Details</h4>
-                <p className="text-sm text-gray-600">{selectedProcurement.buyer} • {selectedProcurement.quantity} • Due: {selectedProcurement.deadline}</p>
+              <div className="p-4 bg-[#F5F1E5] rounded-lg">
+                <h4 className="font-bold text-[#123C5C] mb-2">Demand Notice Details</h4>
+                <p className="text-sm text-[#45586B]">{selectedProcurement.buyer} • {selectedProcurement.quantity} • Due: {selectedProcurement.deadline}</p>
               </div>
               <div className="space-y-3">
                 {/* Mock matched producers */}
-                <div className="p-4 border rounded-lg">
+                <div className="p-4 border border-[#E7E1D0] rounded-xl">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-bold">Juan Dela Cruz</p>
-                      <p className="text-sm text-gray-600">Brgy. Centro • Rice Farmer • 4.8★</p>
-                      <p className="text-sm text-green-600">Available: 500 kg • ₱120/kg</p>
+                      <p className="font-bold text-[#123C5C]">Juan Dela Cruz</p>
+                      <p className="text-sm text-[#45586B]">Brgy. Centro • Rice Farmer • 4.8★</p>
+                      <p className="text-sm text-[#15803D]">Available: 500 kg • ₱120/kg</p>
                     </div>
                     <Button size="sm">Contact Producer</Button>
                   </div>
                 </div>
-                <div className="p-4 border rounded-lg">
+                <div className="p-4 border border-[#E7E1D0] rounded-xl">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-bold">Maria Santos</p>
-                      <p className="text-sm text-gray-600">Brgy. Macanaya • Farmer • 4.9★</p>
-                      <p className="text-sm text-green-600">Available: 800 kg • ₱115/kg</p>
+                      <p className="font-bold text-[#123C5C]">Maria Santos</p>
+                      <p className="text-sm text-[#45586B]">Brgy. Macanaya • Farmer • 4.9★</p>
+                      <p className="text-sm text-[#15803D]">Available: 800 kg • ₱115/kg</p>
                     </div>
                     <Button size="sm">Contact Producer</Button>
                   </div>
                 </div>
-                <div className="p-4 border rounded-lg">
+                <div className="p-4 border border-[#E7E1D0] rounded-xl">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-bold">Pedro Reyes</p>
-                      <p className="text-sm text-gray-600">Brgy. Sanja • Fisher • 4.7★</p>
-                      <p className="text-sm text-green-600">Available: 300 kg • ₱125/kg</p>
+                      <p className="font-bold text-[#123C5C]">Pedro Reyes</p>
+                      <p className="text-sm text-[#45586B]">Brgy. Sanja • Fisher • 4.7★</p>
+                      <p className="text-sm text-[#15803D]">Available: 300 kg • ₱125/kg</p>
                     </div>
                     <Button size="sm">Contact Producer</Button>
                   </div>

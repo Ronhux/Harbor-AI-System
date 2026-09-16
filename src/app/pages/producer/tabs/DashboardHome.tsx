@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TrendingUp, Package, DollarSign, Users, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
@@ -12,6 +12,27 @@ interface DashboardHomeProps {
 
 export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [availableProducts, setAvailableProducts] = useState<any[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAvailableProducts = async () => {
+      try {
+        const { request } = await import('../../../../lib/api');
+        const response = await request('/api/producer/dashboard');
+        const products = Array.isArray(response.product_listings) ? response.product_listings : [];
+        setAvailableProducts(products.filter((product: any) => Number(product.quantity_available ?? product.quantity ?? 0) > 0));
+      } catch (error) {
+        console.error('Unable to load producer products', error);
+        setAvailableProducts([]);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadAvailableProducts();
+  }, []);
+
   const stats = [
     {
       label: 'Total Revenue',
@@ -66,6 +87,33 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
 
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#6b7280'];
 
+  const resolveImageUrl = (value: string | null | undefined) => {
+    if (!value) return null;
+    if (value.startsWith('http://') || value.startsWith('https://')) return value;
+    const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '').replace(/\/api$/, '');
+    const normalizedValue = value.replace(/^\/+/, '').replace(/^public\//, '');
+    const storagePath = normalizedValue.startsWith('storage/') ? normalizedValue : `storage/${normalizedValue}`;
+    return configuredApiUrl ? `${configuredApiUrl}/${storagePath}` : `/${storagePath}`;
+  };
+
+  function DashboardProductImage({ src, alt }: { src?: string | null; alt: string }) {
+    const [imageFailed, setImageFailed] = useState(false);
+
+    useEffect(() => {
+      setImageFailed(false);
+    }, [src]);
+
+    if (src && !imageFailed) {
+      return <img src={src} alt={alt} className="aspect-[4/3] w-full object-cover" onError={() => setImageFailed(true)} />;
+    }
+
+    return (
+      <div className="flex aspect-[4/3] w-full items-center justify-center bg-[#0F9488]/10 text-[#0F9488]" aria-label="No product image">
+        <Package className="h-12 w-12" aria-hidden="true" />
+      </div>
+    );
+  }
+
   const recentOrders = [
     { id: 'ORD-001', buyer: 'Aparri LGU', product: 'Premium Rice', quantity: '500 kg', status: 'Processing', amount: '₱25,000' },
     { id: 'ORD-002', buyer: 'Kadiwa Outlet 1', product: 'Fresh Tilapia', quantity: '200 kg', status: 'Delivered', amount: '₱18,000' },
@@ -76,8 +124,8 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
     <div className="p-6 space-y-6">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Welcome Back!</h1>
-        <p className="text-gray-600 mt-1">Here's what's happening with your enterprise today.</p>
+        <h1 className="text-3xl font-bold text-gray-900">Welcome ulit!</h1>
+        <p className="text-gray-600 mt-1">Ito ang mga nangyayari sa iyong enterprise ngayon.</p>
       </div>
 
       {/* Stats Grid */}
@@ -106,12 +154,64 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
         })}
       </div>
 
+      <Card className="overflow-hidden border-[#E7E1D0] bg-white shadow-sm">
+        <CardHeader className="border-b border-[#E7E1D0]/70 bg-[#F5F1E5]/45">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle className="font-display text-2xl text-[#123C5C]">My Digital Stall</CardTitle>
+              <CardDescription className="mt-2">Your products and listings at a glance.</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => onTabChange?.('listings')} className="border-[#0F9488] text-[#0F9488] hover:bg-[#0F9488]/10">
+              View All Listings
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6">
+          {productsLoading ? (
+            <p className="text-sm text-[#45586B]">Nilo-load ang mga produkto...</p>
+          ) : availableProducts.length === 0 ? (
+            <p className="text-sm text-[#45586B]">Wala ka pang available na produkto.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {availableProducts.slice(0, 6).map((product: any, index: number) => {
+                const productName = product.product_name || product.name || 'Unnamed Product';
+                const category = product.product_category || product.category || 'General';
+                const unit = product.unit || product.unit_of_measure || 'kg';
+                const price = Number(product.current_price_per_unit ?? product.price_per_unit ?? product.price ?? 0);
+                const quantity = product.quantity_available ?? product.quantity ?? 0;
+                const status = String(product.status || 'Active').replace(/^./, (char: string) => char.toUpperCase());
+                const image = product.image_url || product.imageUrl || product.image_path || product.imagePath;
+
+                return (
+                  <article key={`${product.listing_id ?? product.id ?? productName}-${index}`} className="overflow-hidden rounded-xl border border-[#E7E1D0] bg-white shadow-sm transition-shadow hover:shadow-md">
+                    <DashboardProductImage src={resolveImageUrl(image)} alt={productName} />
+                    <div className="space-y-3 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate font-bold text-[#123C5C]">{productName}</h3>
+                          <p className="mt-1 text-sm text-[#45586B]">{category}</p>
+                        </div>
+                        <Badge className="shrink-0 bg-[#22C55E]/15 text-[#0B4842]">{status}</Badge>
+                      </div>
+                      <div className="space-y-1 text-sm text-[#45586B]">
+                        <p><span className="font-semibold text-[#123C5C]">Price:</span> ₱{price.toLocaleString()} / {unit}</p>
+                        <p><span className="font-semibold text-[#123C5C]">Available:</span> {quantity} {unit}</p>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Revenue Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
-            <CardDescription>Monthly revenue over the last 6 months</CardDescription>
+            <CardDescription>Buwanang revenue sa nakalipas na 6 na buwan</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -130,7 +230,7 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
         <Card>
           <CardHeader>
             <CardTitle>Product Mix</CardTitle>
-            <CardDescription>Distribution by product type</CardDescription>
+            <CardDescription>Distribution ayon sa uri ng produkto</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -162,10 +262,10 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Recent Orders</CardTitle>
-              <CardDescription>Your latest order activity</CardDescription>
+              <CardTitle>Mga Kamakailang Orders</CardTitle>
+              <CardDescription>Pinakabagong activity ng iyong orders</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => onTabChange?.('orders')}>View All</Button>
+              <Button variant="outline" size="sm" onClick={() => onTabChange?.('orders')}>Tingnan Lahat</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -195,16 +295,16 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
       <div className="grid md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <CardContent className="p-6">
-            <h3 className="font-bold text-green-900 mb-2">Add New Listing</h3>
-            <p className="text-sm text-green-700 mb-4">List a new product in your digital stall</p>
-            <Button className="bg-green-600 hover:bg-green-700" onClick={() => onTabChange?.('listings')}>Create Listing</Button>
+            <h3 className="font-bold text-green-900 mb-2">Magdagdag ng Bagong Listing</h3>
+            <p className="text-sm text-green-700 mb-4">Mag-list ng bagong produkto sa iyong digital stall</p>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={() => onTabChange?.('listings')}>Gumawa ng Listing</Button>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-6">
-            <h3 className="font-bold text-blue-900 mb-2">View Market Insights</h3>
-            <p className="text-sm text-blue-700 mb-4">Get AI-powered market insight cards</p>
+            <h3 className="font-bold text-blue-900 mb-2">Tingnan ang Market Insights</h3>
+            <p className="text-sm text-blue-700 mb-4">Makakuha ng AI-powered market insight cards</p>
             <Dialog open={showRecommendations} onOpenChange={setShowRecommendations}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="border-blue-600 text-blue-700 hover:bg-blue-50">
@@ -255,8 +355,8 @@ export default function DashboardHome({ onTabChange }: DashboardHomeProps) {
         
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
           <CardContent className="p-6">
-            <h3 className="font-bold text-purple-900 mb-2">Check Programs</h3>
-            <p className="text-sm text-purple-700 mb-4">See your program eligibility status</p>
+            <h3 className="font-bold text-purple-900 mb-2">Tingnan ang Programs</h3>
+            <p className="text-sm text-purple-700 mb-4">Tingnan ang status ng iyong program eligibility</p>
             <Button variant="outline" className="border-purple-600 text-purple-700 hover:bg-purple-50" onClick={() => onTabChange?.('programs')}>
               Check Now
             </Button>

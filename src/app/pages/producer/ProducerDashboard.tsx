@@ -62,14 +62,14 @@ export default function ProducerDashboard() {
   return (
     <DashboardShell
       title="Producer Dashboard"
-      subtitle="Enterprise performance & listings"
+      subtitle="Performance at listings ng enterprise"
       tabs={tabs}
       activeTab={activeTab}
       onTabChange={setActiveTab}
       userName={userName}
       userRole="Producer"
       showSearch
-      searchPlaceholder="Search products, orders..."
+      searchPlaceholder="Maghanap ng products, orders..."
       onLogout={handleLogout}
     >
       {renderContent()}

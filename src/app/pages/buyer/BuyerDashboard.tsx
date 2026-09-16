@@ -19,6 +19,7 @@ import Profile from './tabs/Profile';
 export default function BuyerDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [pendingOrder, setPendingOrder] = useState<{ producerId: number; listingId: number } | null>(null);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -37,9 +38,22 @@ export default function BuyerDashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <Overview />;
+        return (
+          <Overview
+            onViewAllProducts={() => setActiveTab('browse')}
+            onOrderProduct={(order) => {
+              setPendingOrder(order);
+              setActiveTab('browse');
+            }}
+          />
+        );
       case 'browse':
-        return <BrowseProducers />;
+        return (
+          <BrowseProducers
+            pendingOrder={pendingOrder}
+            onPendingOrderHandled={() => setPendingOrder(null)}
+          />
+        );
       case 'demand':
         return <PostDemand />;
       case 'orders':
@@ -56,14 +70,14 @@ export default function BuyerDashboard() {
   return (
     <DashboardShell
       title="Buyer Dashboard"
-      subtitle="Transaction overview & market intelligence"
+      subtitle="Overview ng transactions at market intelligence"
       tabs={tabs}
       activeTab={activeTab}
       onTabChange={setActiveTab}
       userName="Institutional Buyer"
       userRole="LGU Aparri"
       showSearch
-      searchPlaceholder="Search producers, products..."
+      searchPlaceholder="Maghanap ng producers, products..."
       onLogout={handleLogout}
     >
       {renderContent()}

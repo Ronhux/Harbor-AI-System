@@ -5,10 +5,10 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 
 export default function MonitoringDashboard() {
   const stats = [
-    { label: 'Total Producers', value: '1,247', change: '+12%', icon: Users, color: 'blue' },
-    { label: 'Active Orders', value: '89', change: '+23%', icon: Package, color: 'green' },
-    { label: 'Total Volume (MTD)', value: '12,450 kg', change: '+18%', icon: TrendingUp, color: 'purple' },
-    { label: 'Total Value (MTD)', value: '₱2.4M', change: '+15%', icon: DollarSign, color: 'orange' },
+    { label: 'Total Producers', value: '1,247', change: '+12%', icon: Users, iconBg: 'bg-[#123C5C]/10', iconColor: 'text-[#123C5C]' },
+    { label: 'Active Orders', value: '89', change: '+23%', icon: Package, iconBg: 'bg-[#22C55E]/15', iconColor: 'text-[#22C55E]' },
+    { label: 'Total Volume (MTD)', value: '12,450 kg', change: '+18%', icon: TrendingUp, iconBg: 'bg-[#0F9488]/15', iconColor: 'text-[#0F9488]' },
+    { label: 'Total Value (MTD)', value: '₱2.4M', change: '+15%', icon: DollarSign, iconBg: 'bg-[#0E7490]/15', iconColor: 'text-[#0E7490]' },
   ];
 
   const activityData = [
@@ -26,7 +26,7 @@ export default function MonitoringDashboard() {
     { name: 'Corn', value: 10, id: 'corn' },
   ];
 
-  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'];
+  const COLORS = ['#22C55E', '#0F9488', '#0E7490', '#123C5C'];
 
   const recentActivities = [
     { id: 1, type: 'registration', message: 'New producer registered', producer: 'Maria Santos', time: '5 mins ago', status: 'pending' },
@@ -45,8 +45,8 @@ export default function MonitoringDashboard() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Monitoring Dashboard</h1>
-        <p className="text-gray-600 mt-1">Overview of platform activity and performance</p>
+        <h1 className="font-display text-2xl sm:text-3xl text-[#123C5C] tracking-tight">Monitoring Dashboard</h1>
+        <p className="text-[#45586B] mt-1">Overview of platform activity and performance</p>
       </div>
 
       {/* Stats */}
@@ -54,16 +54,16 @@ export default function MonitoringDashboard() {
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <Card key={idx}>
+            <Card key={idx} className="border border-[#E7E1D0] hover:shadow-md transition-shadow duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-10 h-10 rounded-full bg-${stat.color}-100 flex items-center justify-center`}>
-                    <Icon className={`w-5 h-5 text-${stat.color}-600`} />
+                  <div className={`w-10 h-10 rounded-full ${stat.iconBg} flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 ${stat.iconColor}`} />
                   </div>
-                  <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+                  <span className="text-sm text-[#15803D] font-medium">{stat.change}</span>
                 </div>
-                <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
+                <div className="text-2xl font-bold text-[#123C5C]">{stat.value}</div>
+                <div className="text-sm text-[#45586B]">{stat.label}</div>
               </CardContent>
             </Card>
           );
@@ -80,12 +80,12 @@ export default function MonitoringDashboard() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={activityData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E7E1D0" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="producers" fill="#3b82f6" name="Producers" />
-                <Bar dataKey="orders" fill="#10b981" name="Orders" />
+                <Bar dataKey="producers" fill="#123C5C" name="Producers" />
+                <Bar dataKey="orders" fill="#22C55E" name="Orders" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -132,15 +132,15 @@ export default function MonitoringDashboard() {
           <CardContent>
             <div className="space-y-3">
               {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                <div key={activity.id} className="flex items-start gap-3 p-3 border border-[#E7E1D0] rounded-xl">
                   <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.status === 'success' ? 'bg-green-500' :
-                    activity.status === 'warning' ? 'bg-yellow-500' :
-                    'bg-blue-500'
+                    activity.status === 'success' ? 'bg-[#22C55E]' :
+                    activity.status === 'warning' ? 'bg-[#F59E0B]' :
+                    'bg-[#0F9488]'
                   }`} />
                   <div className="flex-1">
-                    <div className="font-medium text-sm text-gray-900">{activity.message}</div>
-                    <div className="text-xs text-gray-600 mt-1">{activity.time}</div>
+                    <div className="font-medium text-sm text-[#123C5C]">{activity.message}</div>
+                    <div className="text-xs text-[#45586B] mt-1">{activity.time}</div>
                   </div>
                 </div>
               ))}
@@ -157,7 +157,7 @@ export default function MonitoringDashboard() {
           <CardContent>
             <div className="space-y-3">
               {pendingActions.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                <div key={item.id} className="flex items-center justify-between p-3 border border-[#E7E1D0] rounded-xl hover:bg-[#F5F1E5] transition cursor-pointer">
                   <div className="flex items-center gap-3">
                     {item.priority === 'high' ? (
                       <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -165,8 +165,8 @@ export default function MonitoringDashboard() {
                       <CheckCircle2 className="w-5 h-5 text-gray-400" />
                     )}
                     <div>
-                      <div className="font-medium text-sm text-gray-900">{item.action}</div>
-                      <div className="text-xs text-gray-600">{item.count} pending</div>
+                      <div className="font-medium text-sm text-[#123C5C]">{item.action}</div>
+                      <div className="text-xs text-[#45586B]">{item.count} pending</div>
                     </div>
                   </div>
                   <Badge variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'secondary' : 'outline'}>

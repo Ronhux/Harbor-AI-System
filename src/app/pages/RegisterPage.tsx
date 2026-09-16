@@ -111,21 +111,53 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-50 py-12 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <Card>
-          <CardHeader className="text-center">
+    <div className="min-h-screen bg-[#F5F1E5] font-body relative overflow-hidden px-4 py-8 sm:py-12">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@400;500;600;700;800&display=swap');
+        .font-display { font-family: 'Anton', ui-sans-serif, sans-serif; }
+        .font-body { font-family: 'Baloo 2', ui-rounded, system-ui, sans-serif; }
+      `}</style>
+
+      <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#22C55E]/20 blur-[100px]" />
+      <div className="pointer-events-none absolute -right-16 -bottom-16 h-80 w-80 rounded-full bg-[#0F9488]/20 blur-[100px]" />
+      <div className="absolute bottom-0 left-0 z-0 w-full leading-none" aria-hidden="true">
+        <svg viewBox="0 0 1440 180" preserveAspectRatio="none" className="block h-20 w-full sm:h-28 md:h-32">
+          <defs>
+            <linearGradient id="registerHorizonGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#22C55E" />
+              <stop offset="55%" stopColor="#22C55E" />
+              <stop offset="72%" stopColor="#0F9488" />
+              <stop offset="100%" stopColor="#0EA5A0" />
+            </linearGradient>
+          </defs>
+          <path d="M0,95 C180,50 360,95 540,68 C720,40 900,85 1080,58 C1260,30 1350,65 1440,50 L1440,180 L0,180 Z" fill="#BFEFE2" opacity="0.5" />
+          <path d="M0,70 L70,108 L140,76 L210,120 L280,86 L350,128 L420,94 L490,132 L560,100 L630,136 L700,112 Q760,146 820,128 T940,136 T1060,108 T1180,130 T1300,98 L1440,116 L1440,180 L0,180 Z" fill="url(#registerHorizonGrad)" />
+        </svg>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-3xl">
+        <div className="mb-5 flex items-center justify-between gap-4 px-1">
+          <Link to="/" className="flex items-center gap-3 text-[#123C5C]">
+            <img src="/logo.png" alt="HarborAI Logo" className="h-10 w-10 object-contain sm:h-12 sm:w-12" />
+            <span className="font-display text-xl tracking-tight sm:text-2xl">HarborAI</span>
+          </Link>
+          <Link to="/login" className="text-sm font-bold text-[#0F9488] hover:text-[#0B4842] hover:underline">Login</Link>
+        </div>
+
+        <Card className="overflow-hidden rounded-2xl border-2 border-[#E7E1D0] bg-white/95 shadow-xl backdrop-blur-sm">
+          <div className="h-2 bg-gradient-to-r from-[#22C55E] via-[#0F9488] to-[#22D3EE]" />
+          <CardHeader className="px-5 pt-7 text-center sm:px-10 sm:pt-9">
             <div className="flex items-center justify-center gap-3 mb-4">
               <img src="/logo.png" alt="HarborAI Logo" className="w-14 h-14 object-contain" />
-              <span className="text-3xl font-bold text-green-900">HarborAI</span>
+              <span className="font-display text-3xl tracking-tight text-[#123C5C]">HarborAI</span>
             </div>
-            <CardTitle className="text-2xl">Register as Producer</CardTitle>
-            <CardDescription>
+            <CardTitle className="font-display text-2xl tracking-tight text-[#123C5C]">Register as Producer</CardTitle>
+            <CardDescription className="text-[#45586B]">
               Join HarborAI to access institutional markets and AI-powered insights
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="px-5 pb-8 sm:px-10">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-red-800 text-sm whitespace-pre-line">{error}</p>
@@ -142,6 +174,7 @@ export default function RegisterPage() {
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                     required
+                    className="rounded-full"
                   />
                 </div>
                 <div>
@@ -152,6 +185,7 @@ export default function RegisterPage() {
                     placeholder="Santos"
                     value={formData.middle_name}
                     onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
+                    className="rounded-full"
                   />
                 </div>
               </div>
@@ -165,6 +199,7 @@ export default function RegisterPage() {
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                     required
+                    className="rounded-full"
                   />
                 </div>
                 <div>
@@ -175,6 +210,7 @@ export default function RegisterPage() {
                     placeholder="Jr., Sr., III, etc."
                     value={formData.suffix}
                     onChange={(e) => setFormData({ ...formData, suffix: e.target.value })}
+                    className="rounded-full"
                   />
                 </div>
               </div>
@@ -187,6 +223,7 @@ export default function RegisterPage() {
                   value={formData.contact_number}
                   onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
                   required
+                  className="rounded-full"
                 />
               </div>
 
@@ -199,6 +236,7 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  className="rounded-full"
                 />
               </div>
 
@@ -237,8 +275,9 @@ export default function RegisterPage() {
                   value={formData.producer_type} 
                   onValueChange={(value) => setFormData({ ...formData, producer_type: value })}
                   required
+                  className="rounded-full"
                 >
-                  <SelectTrigger id="producer_type">
+                    <SelectTrigger id="producer_type" className="rounded-full">
                     <SelectValue placeholder="Select producer type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -258,15 +297,16 @@ export default function RegisterPage() {
                     value={formData.rsbsa_number}
                     onChange={(e) => setFormData({ ...formData, rsbsa_number: e.target.value })}
                     required
+                    className="rounded-full"
                   />
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="mt-1 text-sm text-[#45586B]">
                     Provide your Registry System for Basic Sectors in Agriculture number for automatic verification.
                   </p>
                 </div>
               )}
 
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <label htmlFor="terms" className="flex items-center gap-3 text-sm text-gray-700 leading-relaxed cursor-pointer">
+              <div className="rounded-xl border border-[#0F9488]/20 bg-[#0F9488]/5 p-4">
+                <label htmlFor="terms" className="flex cursor-pointer items-center gap-3 text-sm leading-relaxed text-[#45586B]">
                   <Checkbox
                     id="terms"
                     checked={formData.agreeToTerms}
@@ -276,39 +316,39 @@ export default function RegisterPage() {
                   />
                   <span>
                     I agree to the{' '}
-                    <a href="#" className="text-blue-600 hover:underline">Terms & Conditions</a>
-                    {' '}and{' '}
-                    <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>.
+                    <a href="#" className="font-semibold text-[#0F9488] hover:underline">Terms & Conditions</a>
+                      {' '}and{' '}
+                      <Link to="/privacy" className="font-semibold text-[#0F9488] hover:underline">Privacy Policy</Link>.
                     I understand my information will be verified by DA/LGU personnel.
                   </span>
                 </label>
               </div>
 
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+              <Button type="submit" className="w-full rounded-full bg-[#22C55E] font-bold text-white hover:bg-[#15803D]">
                 <UserPlus className="w-4 h-4 mr-2" />
                 Create Producer Account
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-gray-600">
+            <div className="mt-6 text-center text-sm text-[#45586B]">
               <p>
                 Already have an account?{' '}
-                <Link to="/login" className="text-green-600 hover:underline font-medium">
+                <Link to="/login" className="font-bold text-[#0F9488] hover:text-[#0B4842] hover:underline">
                   Login here
                 </Link>
               </p>
             </div>
 
-            <div className="mt-6 pt-6 border-t">
+            <div className="mt-6 border-t border-[#E7E1D0] pt-6">
               <Link to="/">
-                <Button variant="ghost" className="w-full">
+                <Button variant="ghost" className="w-full rounded-full font-semibold text-[#123C5C] hover:bg-[#123C5C]/5">
                   Back to Home
                 </Button>
               </Link>
             </div>
 
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
+            <div className="mt-6 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-4">
+              <p className="text-sm text-[#92400E]">
                 <strong>Note:</strong> Your account will be reviewed and verified by DA/LGU personnel 
                 before gaining full access to the platform.
               </p>

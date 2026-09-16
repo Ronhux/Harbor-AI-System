@@ -43,7 +43,7 @@ export default function PostDemand() {
         status: demand.status,
       })));
     } catch (err: any) {
-      setError(err.message || 'Unable to load demand notices.');
+      setError(err.message || 'Hindi ma-load ang demand notices.');
     }
   };
 
@@ -56,7 +56,7 @@ export default function PostDemand() {
     setError('');
 
     if (!product || !quantity || !unit || !deadline) {
-      setError('Please complete the product, quantity, unit, and deadline fields.');
+      setError('Kumpletuhin ang product, quantity, unit, at deadline fields.');
       return;
     }
 
@@ -83,7 +83,7 @@ export default function PostDemand() {
       setRequirements('');
       await loadDemands();
     } catch (err: any) {
-      setError(err.message || 'Unable to post demand notice.');
+      setError(err.message || 'Hindi ma-post ang demand notice.');
     } finally {
       setIsSubmitting(false);
     }
@@ -92,25 +92,25 @@ export default function PostDemand() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Post Demand Notice</h1>
-        <p className="text-gray-600 mt-1">Create demand postings and receive matches from producers</p>
+        <h1 className="text-3xl font-bold text-gray-900">Mag-post ng Demand Notice</h1>
+        <p className="text-gray-600 mt-1">Gumawa ng demand postings at makatanggap ng matches mula sa producers</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Post Form */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>New Demand Notice</CardTitle>
-            <CardDescription>Fill in the details of your institutional demand</CardDescription>
+            <CardTitle>Bagong Demand Notice</CardTitle>
+            <CardDescription>Punan ang detalye ng iyong institutional demand</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="product">Product Type</Label>
+                <Label htmlFor="product">Uri ng Produkto</Label>
                 <Select value={product} onValueChange={setProduct}>
                   <SelectTrigger id="product">
-                    <SelectValue placeholder="Select product" />
+                    <SelectValue placeholder="Pumili ng produkto" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="rice">Rice</SelectItem>
@@ -121,7 +121,7 @@ export default function PostDemand() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="quantity">Quantity Needed</Label>
+                <Label htmlFor="quantity">Kailangang Quantity</Label>
                 <Input id="quantity" type="number" min="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="e.g., 2000" />
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function PostDemand() {
                 <Label htmlFor="unit">Unit</Label>
                 <Select value={unit} onValueChange={setUnit}>
                   <SelectTrigger id="unit">
-                    <SelectValue placeholder="Select unit" />
+                    <SelectValue placeholder="Pumili ng unit" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="kg">Kilogram (kg)</SelectItem>
@@ -148,11 +148,11 @@ export default function PostDemand() {
 
             <div>
               <Label htmlFor="budget">Budget Range (Optional)</Label>
-              <Input id="budget" type="number" min="0" value={budget} onChange={(event) => setBudget(event.target.value)} placeholder="Maximum price per unit" />
+              <Input id="budget" type="number" min="0" value={budget} onChange={(event) => setBudget(event.target.value)} placeholder="Pinakamataas na presyo bawat unit" />
             </div>
 
             <div>
-              <Label htmlFor="requirements">Special Requirements</Label>
+              <Label htmlFor="requirements">Mga Special Requirement</Label>
               <Textarea 
                 id="requirements" 
                 placeholder="Quality standards, certifications, delivery preferences..."
@@ -166,7 +166,7 @@ export default function PostDemand() {
 
             <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
-              {isSubmitting ? 'Posting...' : 'Post Demand Notice'}
+              {isSubmitting ? 'Nino-post...' : 'Mag-post ng Demand Notice'}
             </Button>
             </form>
           </CardContent>
@@ -175,8 +175,8 @@ export default function PostDemand() {
         {/* Posted Demands */}
         <Card>
           <CardHeader>
-            <CardTitle>Your Posted Demands</CardTitle>
-            <CardDescription>Active demand postings</CardDescription>
+            <CardTitle>Iyong Na-post na Demands</CardTitle>
+            <CardDescription>Mga active demand posting</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -195,7 +195,7 @@ export default function PostDemand() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-blue-600">{demand.matches} matches</span>
-                    <Button size="sm" variant="outline" onClick={() => setSelectedDemand(demand)}>View</Button>
+                    <Button size="sm" variant="outline" onClick={() => setSelectedDemand(demand)}>Tingnan</Button>
                   </div>
                 </div>
               ))}
@@ -208,8 +208,8 @@ export default function PostDemand() {
       <Dialog open={!!selectedDemand} onOpenChange={() => setSelectedDemand(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Demand Details</DialogTitle>
-            <DialogDescription>Demand notice for {selectedDemand?.product}</DialogDescription>
+            <DialogTitle>Detalye ng Demand</DialogTitle>
+            <DialogDescription>Demand notice para sa {selectedDemand?.product}</DialogDescription>
           </DialogHeader>
           {selectedDemand && (
             <div className="space-y-4">

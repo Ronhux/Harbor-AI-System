@@ -41,17 +41,17 @@ export default function Profile() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate()) {
-      setMessage('Please correct the highlighted fields.');
+      setMessage('Ayusin ang mga naka-highlight na fields.');
       return;
     }
-    setMessage('Profile updated successfully.');
+    setMessage('Matagumpay na na-update ang profile.');
   };
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-        <p className="text-gray-600 mt-1">Edit your institutional buyer profile and organization details.</p>
+        <p className="text-gray-600 mt-1">I-edit ang iyong institutional buyer profile at organization details.</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -81,13 +81,13 @@ export default function Profile() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Organization Details</CardTitle>
+            <CardTitle>Detalye ng Organization</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="organizationName">Organization Name</Label>
+                  <Label htmlFor="organizationName">Pangalan ng Organization</Label>
                   <Input
                     id="organizationName"
                     value={form.organizationName}
@@ -131,7 +131,7 @@ export default function Profile() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="location">Location</Label>
+                  <Label htmlFor="location">Lokasyon</Label>
                   <Input
                     id="location"
                     value={form.location}
@@ -140,7 +140,7 @@ export default function Profile() {
                   {errors.location && <p className="text-sm text-red-600 mt-1">{errors.location}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="role">Role / Position</Label>
+                  <Label htmlFor="role">Role / Posisyon</Label>
                   <Input
                     id="role"
                     value={form.role}
@@ -150,7 +150,7 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label htmlFor="focus">Institutional Focus</Label>
+                  <Label htmlFor="focus">Institutional Focus</Label>
                 <Input
                   id="focus"
                   value={form.focus}
@@ -165,7 +165,7 @@ export default function Profile() {
                   <Input value={form.type} disabled />
                 </div>
                 <div>
-                  <Label>Registration Date</Label>
+                  <Label>Petsa ng Registration</Label>
                   <Input value={form.registrationDate} disabled />
                 </div>
               </div>
@@ -173,7 +173,7 @@ export default function Profile() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t">
                 <p className="text-sm text-green-700">{message}</p>
                 <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  Save Changes
+                  I-save ang Changes
                 </Button>
               </div>
             </form>

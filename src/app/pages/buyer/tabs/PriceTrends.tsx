@@ -18,13 +18,13 @@ export default function PriceTrends() {
           <TrendingUp className="w-8 h-8 text-blue-600" />
           Price Trends
         </h1>
-        <p className="text-gray-600 mt-1">Monitor market price trends from July to November for strategic planning.</p>
+        <p className="text-gray-600 mt-1">Subaybayan ang market price trends mula July hanggang November para sa strategic planning.</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Market Price Trends (July - November)</CardTitle>
-          <CardDescription>Average monthly prices per kilogram</CardDescription>
+          <CardDescription>Average na buwanang presyo bawat kilo</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
@@ -46,7 +46,7 @@ export default function PriceTrends() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-6">
-            <h3 className="font-bold text-blue-900 mb-3">Current Average Prices</h3>
+            <h3 className="font-bold text-blue-900 mb-3">Kasalukuyang Average Prices</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-blue-800">Rice:</span>
@@ -70,19 +70,19 @@ export default function PriceTrends() {
 
         <Card className="bg-green-50 border-green-200">
           <CardContent className="p-6">
-            <h3 className="font-bold text-green-900 mb-3">Market Guidance</h3>
+            <h3 className="font-bold text-green-900 mb-3">Gabay sa Market</h3>
             <ul className="space-y-2 text-sm text-green-800">
               <li className="flex items-start gap-2">
                 <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5" />
-                <span>Could holding rice prices steady through November keep your offering market-competitive?</span>
+                <span>Makakatulong ba ang pagpapanatiling stable ng rice prices hanggang November para manatiling competitive ang iyong offering?</span>
               </li>
               <li className="flex items-start gap-2">
                 <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5" />
-                <span>Is it the right time to lock in fish supply contracts as prices continue to rise?</span>
+                <span>Tamang panahon na ba para mag-lock in ng fish supply contracts habang patuloy na tumataas ang prices?</span>
               </li>
               <li className="flex items-start gap-2">
                 <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5" />
-                <span>Should you plan for seasonal vegetable price shifts ahead of the peak market window?</span>
+                <span>Dapat ka bang magplano para sa seasonal vegetable price shifts bago ang peak market window?</span>
               </li>
             </ul>
           </CardContent>

@@ -41,6 +41,11 @@ type Producer = {
   product_listings?: ProductListing[];
 };
 
+type BrowseProducersProps = {
+  pendingOrder?: { producerId: number; listingId: number } | null;
+  onPendingOrderHandled?: () => void;
+};
+
 const normalizeProducer = (item: any): Producer => {
   const productListings: ProductListing[] = Array.isArray(item.product_listings)
     ? item.product_listings
@@ -74,7 +79,7 @@ const normalizeProducer = (item: any): Producer => {
   };
 };
 
-export default function BrowseProducers() {
+export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }: BrowseProducersProps) {
   const [selectedProducer, setSelectedProducer] = useState<Producer | null>(null);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [producers, setProducers] = useState<Producer[]>([]);
@@ -124,6 +129,17 @@ export default function BrowseProducers() {
 
     fetchProducers();
   }, []);
+
+  useEffect(() => {
+    if (loading || !pendingOrder) return;
+
+    const producer = producers.find((item) => item.id === pendingOrder.producerId);
+    if (!producer) return;
+
+    openOrderDialog(producer);
+    setSelectedListingId(String(pendingOrder.listingId));
+    onPendingOrderHandled?.();
+  }, [loading, pendingOrder, producers]);
 
   /*
    * Get the currently selected product listing.
@@ -200,22 +216,22 @@ export default function BrowseProducers() {
     setOrderError('');
 
     if (!selectedProducer) {
-      setOrderError('Please select a producer.');
+      setOrderError('Pumili ng producer.');
       return;
     }
 
     if (!selectedListingId) {
-      setOrderError('Please select a product.');
+      setOrderError('Pumili ng produkto.');
       return;
     }
 
     if (!selectedListing) {
-      setOrderError('The selected product could not be found.');
+      setOrderError('Hindi makita ang napiling produkto.');
       return;
     }
 
     if (!numericQuantity || numericQuantity <= 0) {
-      setOrderError('Please enter a valid quantity.');
+      setOrderError('Maglagay ng valid na quantity.');
       return;
     }
 
@@ -224,18 +240,18 @@ export default function BrowseProducers() {
       numericQuantity > Number(selectedListing.quantity_available)
     ) {
       setOrderError(
-        `Only ${selectedListing.quantity_available} units are currently available.`
+        ` ${selectedListing.quantity_available} units lamang ang kasalukuyang available.`
       );
       return;
     }
 
     if (!deliveryDate) {
-      setOrderError('Please select a delivery date.');
+      setOrderError('Pumili ng delivery date.');
       return;
     }
 
     if (!shippingAddress.trim()) {
-      setOrderError('Please enter a shipping address.');
+      setOrderError('Maglagay ng shipping address.');
       return;
     }
 
@@ -277,7 +293,7 @@ export default function BrowseProducers() {
 
       console.log('Order created:', result);
 
-      setOrderMessage('Order placed successfully!');
+      setOrderMessage('Matagumpay na na-place ang order!');
 
       /*
        * Keep the success message visible briefly,
@@ -301,7 +317,7 @@ export default function BrowseProducers() {
       console.error('Failed to place order:', error);
 
       setOrderError(
-        error?.message || 'Something went wrong while placing the order.'
+        error?.message || 'May nangyaring problema habang nagpa-place ng order.'
       );
     } finally {
       setPlacingOrder(false);
@@ -316,7 +332,7 @@ export default function BrowseProducers() {
         </h1>
 
         <p className="text-gray-600 mt-1">
-          Find verified producers for your institutional supply needs
+          Hanapin ang verified producers para sa iyong institutional supply needs
         </p>
       </div>
 
@@ -324,15 +340,15 @@ export default function BrowseProducers() {
       <Card>
         <CardContent className="p-4">
           <div className="grid md:grid-cols-4 gap-4">
-            <Input placeholder="Search by product..." />
+            <Input placeholder="Maghanap ayon sa produkto..." />
 
             <Select>
               <SelectTrigger>
-                <SelectValue placeholder="Producer Type" />
+                <SelectValue placeholder="Uri ng Producer" />
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all">Lahat ng Uri</SelectItem>
                 <SelectItem value="farmer">Farmer</SelectItem>
                 <SelectItem value="fisher">Fisher</SelectItem>
               </SelectContent>
@@ -340,17 +356,17 @@ export default function BrowseProducers() {
 
             <Select>
               <SelectTrigger>
-                <SelectValue placeholder="Location" />
+                <SelectValue placeholder="Lokasyon" />
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
+                <SelectItem value="all">Lahat ng Lokasyon</SelectItem>
                 <SelectItem value="centro">Brgy. Centro</SelectItem>
                 <SelectItem value="macanaya">Brgy. Macanaya</SelectItem>
               </SelectContent>
             </Select>
 
-            <Button>Search</Button>
+            <Button>Maghanap</Button>
           </div>
         </CardContent>
       </Card>
@@ -358,7 +374,7 @@ export default function BrowseProducers() {
       {/* Loading */}
       {loading && (
         <div className="text-center py-10 text-gray-600">
-          Loading producers...
+          Nilo-load ang producers...
         </div>
       )}
 
@@ -367,7 +383,7 @@ export default function BrowseProducers() {
         <Card>
           <CardContent className="p-10 text-center">
             <p className="text-gray-600">
-              No producers found.
+              Walang nakitang producers.
             </p>
           </CardContent>
         </Card>
@@ -415,7 +431,7 @@ export default function BrowseProducers() {
               <CardContent className="space-y-4">
                 <div>
                   <div className="text-xs text-gray-600 mb-2">
-                    Products Offered
+                    Mga Produktong Inaalok
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -458,7 +474,7 @@ export default function BrowseProducers() {
                     </div>
 
                     <div className="text-xs text-gray-600">
-                      Avg Price
+                      Average Price
                     </div>
                   </div>
                 </div>
@@ -471,7 +487,7 @@ export default function BrowseProducers() {
                       setSelectedProducer(producer)
                     }
                   >
-                    View Profile
+                    Tingnan ang Profile
                   </Button>
 
                   <Button
@@ -479,7 +495,7 @@ export default function BrowseProducers() {
                     onClick={() => openOrderDialog(producer)}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
-                    Order
+                    Mag-order
                   </Button>
                 </div>
               </CardContent>
@@ -496,11 +512,11 @@ export default function BrowseProducers() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Producer Profile
+              Profile ng Producer
             </DialogTitle>
 
             <DialogDescription>
-              Detailed information about {selectedProducer?.name}
+              Detalyadong impormasyon tungkol kay {selectedProducer?.name}
             </DialogDescription>
           </DialogHeader>
 
@@ -523,7 +539,7 @@ export default function BrowseProducers() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">
-                    Products:
+                    Mga Produkto:
                   </span>
 
                   <div className="flex gap-1 flex-wrap justify-end">
@@ -556,7 +572,7 @@ export default function BrowseProducers() {
 
                 <div className="flex justify-between">
                   <span className="text-gray-600">
-                    Total Orders:
+                    Kabuuang Orders:
                   </span>
 
                   <span className="font-bold">
@@ -595,11 +611,11 @@ export default function BrowseProducers() {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Place Order
+              Mag-place ng Order
             </DialogTitle>
 
             <DialogDescription>
-              Order from {selectedProducer?.name}
+              Mag-order kay {selectedProducer?.name}
             </DialogDescription>
           </DialogHeader>
 
@@ -608,7 +624,7 @@ export default function BrowseProducers() {
 
               <div className="p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-bold mb-2">
-                  Selected Producer
+                  Napiling Producer
                 </h4>
 
                 <p className="text-sm text-gray-600">
@@ -625,7 +641,7 @@ export default function BrowseProducers() {
                 {/* Product */}
                 <div>
                   <label className="text-sm font-medium">
-                    Product
+                    Produkto
                   </label>
 
                   <Select
@@ -637,7 +653,7 @@ export default function BrowseProducers() {
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select product" />
+                      <SelectValue placeholder="Pumili ng produkto" />
                     </SelectTrigger>
 
                     <SelectContent>
@@ -674,7 +690,7 @@ export default function BrowseProducers() {
                   <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">
-                        Product:
+                        Produkto:
                       </span>
 
                       <span className="font-medium">
@@ -684,7 +700,7 @@ export default function BrowseProducers() {
 
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">
-                        Price:
+                        Presyo:
                       </span>
 
                       <span className="font-medium">
@@ -722,7 +738,7 @@ export default function BrowseProducers() {
                     type="number"
                     min="0"
                     step="0.01"
-                    placeholder="Enter quantity"
+                    placeholder="Ilagay ang quantity"
                     value={orderQuantity}
                     onChange={(event) =>
                       setOrderQuantity(event.target.value)
@@ -753,7 +769,7 @@ export default function BrowseProducers() {
 
                   <Input
                     type="text"
-                    placeholder="Enter shipping address"
+                    placeholder="Ilagay ang shipping address"
                     value={shippingAddress}
                     onChange={(event) =>
                       setShippingAddress(event.target.value)
@@ -767,7 +783,7 @@ export default function BrowseProducers() {
                     <div className="p-4 bg-green-50 border border-green-100 rounded-lg">
                       <div className="flex justify-between">
                         <span className="text-gray-600">
-                          Unit Price:
+                          Presyo bawat Unit:
                         </span>
 
                         <span className="font-medium">
@@ -787,7 +803,7 @@ export default function BrowseProducers() {
 
                       <div className="flex justify-between pt-2 mt-2 border-t">
                         <span className="font-bold">
-                          Total:
+                          Kabuuan:
                         </span>
 
                         <span className="font-bold text-green-600 text-lg">
@@ -819,7 +835,7 @@ export default function BrowseProducers() {
                   className="flex-1"
                   disabled={placingOrder}
                 >
-                  Cancel
+                  Kanselahin
                 </Button>
 
                 <Button
@@ -828,8 +844,8 @@ export default function BrowseProducers() {
                   disabled={placingOrder}
                 >
                   {placingOrder
-                    ? 'Placing Order...'
-                    : 'Place Order'}
+                    ? 'Nilo-load ang Order...'
+                    : 'Mag-place ng Order'}
                 </Button>
               </div>
             </div>

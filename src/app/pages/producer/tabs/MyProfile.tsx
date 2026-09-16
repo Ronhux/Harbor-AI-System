@@ -39,7 +39,7 @@ export default function MyProfile() {
   }, []);
 
   if (loading) {
-    return <div className="p-6">Loading profile...</div>;
+    return <div className="p-6">Nilo-load ang profile...</div>;
   }
 
   if (error) {
@@ -47,7 +47,7 @@ export default function MyProfile() {
   }
 
   if (!producer) {
-    return <div className="p-6">Profile not found</div>;
+    return <div className="p-6">Hindi makita ang profile</div>;
   }
 
   return (
@@ -57,14 +57,14 @@ export default function MyProfile() {
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             My Profile
           </h1>
-          <p className="text-gray-600 mt-1">Manage your account and enterprise information</p>
+          <p className="text-gray-600 mt-1">Pamahalaan ang iyong account at impormasyon ng enterprise</p>
         </div>
         {!isEditing ? (
           <button 
             onClick={() => setIsEditing(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Edit Profile
+            I-edit ang Profile
           </button>
         ) : (
           <div className="flex gap-2">
@@ -72,10 +72,10 @@ export default function MyProfile() {
               onClick={() => setIsEditing(false)}
               className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
             >
-              Cancel
+              Kanselahin
             </button>
             <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-              Save Changes
+              I-save ang Changes
             </button>
           </div>
         )}
@@ -102,13 +102,13 @@ export default function MyProfile() {
           )}
           {producer.location && (
             <div className="flex items-center gap-3 text-sm">
-              <span className="font-semibold text-gray-700">Location:</span>
+              <span className="font-semibold text-gray-700">Lokasyon:</span>
               <span className="text-gray-600">{producer.location}</span>
             </div>
           )}
           {producer.primary_product_type && (
             <div className="flex items-center gap-3 text-sm">
-              <span className="font-semibold text-gray-700">Primary Product:</span>
+              <span className="font-semibold text-gray-700">Pangunahing Produkto:</span>
               <span className="text-gray-600">{producer.primary_product_type}</span>
             </div>
           )}
