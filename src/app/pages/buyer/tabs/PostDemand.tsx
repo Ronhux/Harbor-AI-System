@@ -92,8 +92,8 @@ export default function PostDemand() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Mag-post ng Demand Notice</h1>
-        <p className="text-gray-600 mt-1">Gumawa ng demand postings at makatanggap ng matches mula sa producers</p>
+        <h1 className="font-display text-2xl sm:text-3xl text-[#123C5C] tracking-tight">Mag-post ng Demand Notice</h1>
+        <p className="text-[#45586B] mt-1">Gumawa ng demand postings at makatanggap ng matches mula sa producers</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -164,7 +164,7 @@ export default function PostDemand() {
 
             {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
 
-            <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" disabled={isSubmitting} className="w-full rounded-full font-bold bg-[#22C55E] hover:bg-[#15803D]">
               <Plus className="w-4 h-4 mr-2" />
               {isSubmitting ? 'Nino-post...' : 'Mag-post ng Demand Notice'}
             </Button>
@@ -181,12 +181,12 @@ export default function PostDemand() {
           <CardContent>
             <div className="space-y-3">
               {postedDemands.map((demand) => (
-                <div key={demand.id} className="p-3 border rounded-lg">
+                <div key={demand.id} className="p-3 border border-[#E7E1D0] rounded-xl">
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-bold text-gray-900">{demand.product}</h4>
-                    <Badge className="bg-green-500">{demand.status}</Badge>
+                    <h4 className="font-bold text-[#123C5C]">{demand.product}</h4>
+                    <Badge className="bg-[#22C55E]">{demand.status}</Badge>
                   </div>
-                  <div className="text-sm text-gray-600 space-y-1 mb-3">
+                  <div className="text-sm text-[#45586B] space-y-1 mb-3">
                     <div>Quantity: {demand.quantity}</div>
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
@@ -194,7 +194,7 @@ export default function PostDemand() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-600">{demand.matches} matches</span>
+                    <span className="text-sm font-medium text-[#0F9488]">{demand.matches} matches</span>
                     <Button size="sm" variant="outline" onClick={() => setSelectedDemand(demand)}>Tingnan</Button>
                   </div>
                 </div>
@@ -215,44 +215,44 @@ export default function PostDemand() {
             <div className="space-y-4">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Product:</span>
-                  <span className="font-bold">{selectedDemand.product}</span>
+                  <span className="text-[#45586B]">Product:</span>
+                  <span className="font-bold text-[#123C5C]">{selectedDemand.product}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Quantity:</span>
-                  <span className="font-bold">{selectedDemand.quantity}</span>
+                  <span className="text-[#45586B]">Quantity:</span>
+                  <span className="font-bold text-[#123C5C]">{selectedDemand.quantity}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Deadline:</span>
-                  <span className="font-bold">{selectedDemand.deadline}</span>
+                  <span className="text-[#45586B]">Deadline:</span>
+                  <span className="font-bold text-[#123C5C]">{selectedDemand.deadline}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <Badge className="bg-green-500">{selectedDemand.status}</Badge>
+                  <span className="text-[#45586B]">Status:</span>
+                  <Badge className="bg-[#22C55E]">{selectedDemand.status}</Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Matches Found:</span>
-                  <span className="font-bold text-blue-600">{selectedDemand.matches} producers</span>
+                  <span className="text-[#45586B]">Matches Found:</span>
+                  <span className="font-bold text-[#0F9488]">{selectedDemand.matches} producers</span>
                 </div>
               </div>
-              <div className="pt-4 border-t">
-                <h4 className="font-bold mb-3">Matched Producers</h4>
+              <div className="pt-4 border-t border-[#E7E1D0]">
+                <h4 className="font-bold text-[#123C5C] mb-3">Matched Producers</h4>
                 <div className="space-y-2">
                   {/* Mock matched producers */}
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-[#F5F1E5] rounded-xl">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium">Juan Dela Cruz</p>
-                        <p className="text-sm text-gray-600">Brgy. Centro • Rice Farmer</p>
+                        <p className="font-medium text-[#123C5C]">Juan Dela Cruz</p>
+                        <p className="text-sm text-[#45586B]">Brgy. Centro • Rice Farmer</p>
                       </div>
                       <Button size="sm" variant="outline">Contact</Button>
                     </div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-[#F5F1E5] rounded-xl">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium">Maria Santos</p>
-                        <p className="text-sm text-gray-600">Brgy. Macanaya • Farmer</p>
+                        <p className="font-medium text-[#123C5C]">Maria Santos</p>
+                        <p className="text-sm text-[#45586B]">Brgy. Macanaya • Farmer</p>
                       </div>
                       <Button size="sm" variant="outline">Contact</Button>
                     </div>

@@ -163,7 +163,11 @@ export default function DashboardShell({
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-auto rounded-full px-2 py-1.5 text-left hover:bg-[#22C55E]/15 sm:px-3">
+                <Button
+                  variant="ghost"
+                  className="h-auto rounded-full px-2 py-1.5 text-left hover:bg-[#22C55E]/15 sm:px-3"
+                  aria-label={`Open profile menu for ${userName}`}
+                >
                   <Avatar className="h-9 w-9 ring-2 ring-[#22C55E]/50">
                     <AvatarFallback className="bg-[#FDE68A] font-bold text-[#123C5C]">{userName.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
@@ -173,11 +177,15 @@ export default function DashboardShell({
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end" sideOffset={8} className="w-60">
                 <DropdownMenuItem className="font-bold text-[#123C5C]">{userName}</DropdownMenuItem>
-                <DropdownMenuItem onClick={onLogout}>
+                <DropdownMenuItem className="text-xs text-[#45586B]">{userRole}</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={onLogout}
+                  className="mt-1 border-t border-[#E7E1D0] pt-2 font-bold text-[#B42318] focus:bg-[#FEE4E2] focus:text-[#B42318]"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Mag-logout
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

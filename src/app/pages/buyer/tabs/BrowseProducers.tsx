@@ -37,6 +37,10 @@ type Producer = {
   orders: number;
   verified: boolean;
   price: string;
+
+  // Producer profile picture
+  image?: string | null;
+
   raw?: any;
   product_listings?: ProductListing[];
 };
@@ -44,6 +48,186 @@ type Producer = {
 type BrowseProducersProps = {
   pendingOrder?: { producerId: number; listingId: number } | null;
   onPendingOrderHandled?: () => void;
+};
+
+const getApiUrl = (path: string): string => {
+  /*
+   * IMPORTANT:
+   * HarborAI already loads the buyer-producer data through Laravel's
+   * same-origin /api routes. Do NOT hard-code 127.0.0.1:8000 here.
+   *
+   * Using a relative URL keeps the order request on the exact same
+   * Laravel/Vite host that is currently serving the application and
+   * avoids CORS/network failures caused by a different port.
+   */
+  const configured = String(import.meta.env.VITE_API_URL || '').trim();
+
+  if (configured) {
+    const base = configured.replace(/\/+$/, '');
+    return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+
+  return path.startsWith('/') ? path : `/${path}`;
+};
+
+const getXsrfToken = (): string | null => {
+  const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+  if (!match) return null;
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+};
+
+const getTodayLocal = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const extractServerError = async (response: Response): Promise<string> => {
+  const contentType = response.headers.get('content-type') || '';
+  let data: any = null;
+  let rawText = '';
+
+  try {
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      rawText = await response.text();
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = null;
+      }
+    }
+  } catch {
+    data = null;
+  }
+
+  if (data?.errors && typeof data.errors === 'object') {
+    const validationMessages = Object.entries(data.errors)
+      .flatMap(([field, messages]) => {
+        const values = Array.isArray(messages) ? messages : [messages];
+        return values.map((message) => `${field}: ${String(message)}`);
+      })
+      .filter(Boolean);
+
+    if (validationMessages.length > 0) {
+      return validationMessages.join(' ');
+    }
+  }
+
+  if (data?.message) {
+    return String(data.message);
+  }
+
+  if (data?.error) {
+    return String(data.error);
+  }
+
+  switch (response.status) {
+    case 401:
+      return 'Hindi authenticated ang account. Mag-login muli bago mag-order.';
+    case 403:
+      return 'Walang permission ang account na ito para mag-place ng order.';
+    case 404:
+      return 'Hindi makita ang order API endpoint. Siguraduhing tama ang Laravel /api/orders route.';
+    case 405:
+      return 'Hindi supported ang POST method sa /api/orders. Pakicheck ang Laravel route.';
+    case 419:
+      return 'Nag-expire o nawawala ang CSRF token. I-refresh ang page at subukan muli.';
+    case 422:
+      return 'Hindi tinanggap ng Laravel ang order data. Tingnan ang validation details at siguraduhing tama ang listing, quantity, date, at address.';
+    case 500:
+      return 'May server error sa Laravel habang ginagawa ang order. Tingnan ang Laravel log para sa exact error.';
+    default:
+      if (rawText.trim()) {
+        const cleaned = rawText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (cleaned) return cleaned.slice(0, 500);
+      }
+      return `Hindi na-place ang order. Server error: ${response.status}.`;
+  }
+};
+
+/**
+ * Converts different possible Laravel image fields into a usable browser URL.
+ *
+ * Supports common fields such as:
+ * - profile_image
+ * - profile_picture
+ * - profile_photo
+ * - image_url
+ * - image_path
+ * - avatar
+ * - photo
+ * - picture
+ *
+ * It also checks the nested user object because the producer image
+ * may belong to the authenticated user's profile.
+ */
+const resolveProducerImage = (item: any): string | null => {
+  const possibleImage =
+    item?.profile_image ||
+    item?.profile_picture ||
+    item?.profile_photo ||
+    item?.image_url ||
+    item?.image_path ||
+    item?.avatar ||
+    item?.photo ||
+    item?.picture ||
+    item?.user?.profile_image ||
+    item?.user?.profile_picture ||
+    item?.user?.profile_photo ||
+    item?.user?.image_url ||
+    item?.user?.image_path ||
+    item?.user?.avatar ||
+    item?.user?.photo ||
+    null;
+
+  if (!possibleImage || typeof possibleImage !== 'string') {
+    return null;
+  }
+
+  const image = possibleImage.trim();
+
+  if (!image) {
+    return null;
+  }
+
+  // Full URL
+  if (
+    image.startsWith('http://') ||
+    image.startsWith('https://') ||
+    image.startsWith('data:image/')
+  ) {
+    return image;
+  }
+
+  // Laravel public storage
+  if (image.startsWith('/storage/')) {
+    return image;
+  }
+
+  if (image.startsWith('storage/')) {
+    return `/${image}`;
+  }
+
+  // Public uploads
+  if (image.startsWith('/uploads/')) {
+    return image;
+  }
+
+  if (image.startsWith('uploads/')) {
+    return `/${image}`;
+  }
+
+  // Other relative paths
+  return `/${image.replace(/^\/+/, '')}`;
 };
 
 const normalizeProducer = (item: any): Producer => {
@@ -74,6 +258,7 @@ const normalizeProducer = (item: any): Producer => {
     orders: Number(item.orders ?? (products.length * 3 || 0)),
     verified: Boolean(item.verified ?? true),
     price: item.price || '₱0/kg',
+    image: resolveProducerImage(item),
     raw: item,
     product_listings: productListings,
   };
@@ -226,21 +411,27 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
     }
 
     if (!selectedListing) {
-      setOrderError('Hindi makita ang napiling produkto.');
+      setOrderError('Hindi makita ang napiling product listing.');
       return;
     }
 
-    if (!numericQuantity || numericQuantity <= 0) {
-      setOrderError('Maglagay ng valid na quantity.');
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) {
+      setOrderError('Maglagay ng valid na quantity na higit sa 0.');
       return;
     }
+
+    const availableQuantity =
+      selectedListing.quantity_available !== undefined
+        ? Number(selectedListing.quantity_available)
+        : null;
 
     if (
-      selectedListing.quantity_available !== undefined &&
-      numericQuantity > Number(selectedListing.quantity_available)
+      availableQuantity !== null &&
+      Number.isFinite(availableQuantity) &&
+      numericQuantity > availableQuantity
     ) {
       setOrderError(
-        ` ${selectedListing.quantity_available} units lamang ang kasalukuyang available.`
+        `Hindi sapat ang stock. ${availableQuantity.toLocaleString()} units lamang ang available.`
       );
       return;
     }
@@ -250,8 +441,24 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
       return;
     }
 
-    if (!shippingAddress.trim()) {
+    if (deliveryDate < getTodayLocal()) {
+      setOrderError('Hindi maaaring pumili ng nakaraang delivery date.');
+      return;
+    }
+
+    const trimmedAddress = shippingAddress.trim();
+
+    if (!trimmedAddress) {
       setOrderError('Maglagay ng shipping address.');
+      return;
+    }
+
+    const listingId = Number(selectedListing.listing_id);
+
+    if (!Number.isInteger(listingId) || listingId <= 0) {
+      setOrderError(
+        'Invalid ang product listing ID. Hindi maaaring ma-create ang order.'
+      );
       return;
     }
 
@@ -259,66 +466,134 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
       setPlacingOrder(true);
 
       const token = localStorage.getItem('authToken');
+      const xsrfToken = getXsrfToken();
 
+      /*
+       * This is the exact payload expected by the existing
+       * frontend order workflow:
+       *
+       * listing_id
+       * quantity
+       * shipping_address
+       * delivery_date
+       */
       const orderPayload = {
-        listing_id: selectedListing.listing_id,
+        listing_id: listingId,
         quantity: numericQuantity,
-        shipping_address: shippingAddress,
+        shipping_address: trimmedAddress,
         delivery_date: deliveryDate,
       };
 
-      console.log('Placing order with payload:', orderPayload);
+      console.log('========================================');
+      console.log('HarborAI ORDER SUBMISSION');
+      console.log('Endpoint:', getApiUrl('/api/orders'));
+      console.log('Payload:', orderPayload);
+      console.log('Auth token present:', Boolean(token));
+      console.log('========================================');
 
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(orderPayload),
-      });
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
 
-      const result = await response.json().catch(() => ({}));
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
-      console.log('Order response:', response.status, result);
+      if (xsrfToken) {
+        headers['X-XSRF-TOKEN'] = xsrfToken;
+      }
 
-      if (!response.ok) {
+      let response: Response;
+
+      try {
+        response = await fetch(getApiUrl('/api/orders'), {
+          method: 'POST',
+          headers,
+          credentials: 'same-origin',
+          body: JSON.stringify(orderPayload),
+        });
+      } catch (networkError) {
+        console.error('HarborAI order network error:', networkError);
+
         throw new Error(
-          result.message ||
-            result.error ||
-            `Server error: ${response.status}`
+          'Hindi ma-contact ang Laravel order API. Siguraduhing tumatakbo ang Laravel server at gamitin ang parehong URL kung saan binuksan ang HarborAI.'
         );
       }
 
-      console.log('Order created:', result);
+      console.log(
+        'HarborAI ORDER RESPONSE:',
+        response.status,
+        response.statusText
+      );
+
+      if (!response.ok) {
+        const serverError = await extractServerError(response);
+
+        /*
+         * The backend previously returned the generic:
+         * "Failed to place order."
+         *
+         * Do not hide that the failure is coming from Laravel.
+         * Add the HTTP status so the problem can be diagnosed.
+         */
+        if (
+          serverError.trim().toLowerCase() === 'failed to place order.' ||
+          serverError.trim().toLowerCase() === 'failed to place order'
+        ) {
+          throw new Error(
+            `Laravel rejected the order (HTTP ${response.status}). The /api/orders request reached the server, but the backend failed while creating the order. Check the Laravel OrderController/database error.`
+          );
+        }
+
+        throw new Error(
+          `HTTP ${response.status}: ${serverError}`
+        );
+      }
+
+      let result: any = {};
+
+      try {
+        result = await response.json();
+      } catch {
+        result = {};
+      }
+
+      console.log('HarborAI ORDER CREATED:', result);
 
       setOrderMessage('Matagumpay na na-place ang order!');
 
-      /*
-       * Keep the success message visible briefly,
-       * then close the dialog.
-       */
+      window.dispatchEvent(
+        new CustomEvent('orderPlaced', {
+          detail: {
+            order: result?.order ?? result?.data ?? result,
+          },
+        })
+      );
+
       setTimeout(() => {
         setShowOrderDialog(false);
-
+        setSelectedProducer(null);
         setSelectedListingId('');
         setOrderQuantity('');
         setDeliveryDate('');
         setShippingAddress('');
         setOrderMessage('');
-        
-        // Trigger orders refresh across tabs
-        window.dispatchEvent(new CustomEvent('orderPlaced', { 
-          detail: { order: result.order } 
-        }));
-      }, 1200);
-    } catch (error: any) {
-      console.error('Failed to place order:', error);
+        setOrderError('');
+      }, 1000);
+    } catch (error: unknown) {
+      console.error('========================================');
+      console.error('HarborAI ORDER FAILED');
+      console.error(error);
+      console.error('========================================');
 
-      setOrderError(
-        error?.message || 'May nangyaring problema habang nagpa-place ng order.'
-      );
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'May nangyaring problema habang nagpa-place ng order.';
+
+      setOrderError(message);
     } finally {
       setPlacingOrder(false);
     }
@@ -400,8 +675,35 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                      {producer.name.charAt(0)}
+                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center">
+                      {producer.image ? (
+                        <img
+                          src={producer.image}
+                          alt={`${producer.name} profile`}
+                          className="w-full h-full object-cover"
+                          onError={(event) => {
+                            event.currentTarget.style.display = 'none';
+
+                            const fallback =
+                              event.currentTarget.parentElement?.querySelector(
+                                '[data-avatar-fallback]'
+                              ) as HTMLElement | null;
+
+                            if (fallback) {
+                              fallback.classList.remove('hidden');
+                            }
+                          }}
+                        />
+                      ) : null}
+
+                      <span
+                        data-avatar-fallback
+                        className={`text-white font-bold text-2xl ${
+                          producer.image ? 'hidden' : ''
+                        }`}
+                      >
+                        {producer.name.charAt(0).toUpperCase()}
+                      </span>
                     </div>
 
                     <div>
@@ -523,8 +825,35 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
           {selectedProducer && (
             <div className="space-y-4">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
-                  {selectedProducer.name.charAt(0)}
+                <div className="w-24 h-24 rounded-full overflow-hidden flex-shrink-0 border-4 border-white shadow-lg bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center mx-auto mb-4">
+                  {selectedProducer.image ? (
+                    <img
+                      src={selectedProducer.image}
+                      alt={`${selectedProducer.name} profile`}
+                      className="w-full h-full object-cover"
+                      onError={(event) => {
+                        event.currentTarget.style.display = 'none';
+
+                        const fallback =
+                          event.currentTarget.parentElement?.querySelector(
+                            '[data-profile-fallback]'
+                          ) as HTMLElement | null;
+
+                        if (fallback) {
+                          fallback.classList.remove('hidden');
+                        }
+                      }}
+                    />
+                  ) : null}
+
+                  <span
+                    data-profile-fallback
+                    className={`text-white font-bold text-4xl ${
+                      selectedProducer.image ? 'hidden' : ''
+                    }`}
+                  >
+                    {selectedProducer.name.charAt(0).toUpperCase()}
+                  </span>
                 </div>
 
                 <h3 className="text-xl font-bold">
@@ -608,7 +937,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
         open={showOrderDialog}
         onOpenChange={closeOrderDialog}
       >
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Mag-place ng Order
@@ -736,7 +1065,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
 
                   <Input
                     type="number"
-                    min="0"
+                    min="0.01"
                     step="0.01"
                     placeholder="Ilagay ang quantity"
                     value={orderQuantity}
@@ -754,6 +1083,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
 
                   <Input
                     type="date"
+                    min={getTodayLocal()}
                     value={deliveryDate}
                     onChange={(event) =>
                       setDeliveryDate(event.target.value)
@@ -822,14 +1152,16 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
 
                 {/* Error Message */}
                 {orderError && (
-                  <div className="p-3 bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm">
-                    {orderError}
+                  <div className="p-3 bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm leading-relaxed">
+                    <div className="font-semibold">Hindi na-place ang order.</div>
+                    <div className="mt-1">{orderError}</div>
                   </div>
                 )}
               </div>
 
               <div className="flex gap-2 pt-4">
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={closeOrderDialog}
                   className="flex-1"
@@ -839,6 +1171,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 </Button>
 
                 <Button
+                  type="button"
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                   onClick={handlePlaceOrder}
                   disabled={placingOrder}
