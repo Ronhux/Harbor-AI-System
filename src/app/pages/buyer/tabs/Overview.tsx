@@ -155,19 +155,19 @@
           <p className="text-[#45586B] mt-1">Pangkalahatang view ng buyer requests, transactions, market demand, at availability ng producers.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {summaryStats.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.label} className="border border-[#E7E1D0] hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-5">
+                <CardContent className="min-w-0 p-3 sm:p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl ${stat.iconBg} flex items-center justify-center`}>
-                      <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                    <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl ${stat.iconBg} flex items-center justify-center`}>
+                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.iconColor}`} />
                     </div>
                     <Badge className="bg-[#123C5C]/10 text-[#123C5C]">{stat.label}</Badge>
                   </div>
-                  <div className="text-3xl font-bold text-[#123C5C]">{stat.value}</div>
+                  <div className="truncate text-xl font-bold text-[#123C5C] sm:text-3xl">{stat.value}</div>
                 </CardContent>
               </Card>
             );
@@ -217,7 +217,7 @@
             ) : filteredProducts.length === 0 ? (
               <p className="py-8 text-center text-sm text-[#45586B]">No products found.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
                 {filteredProducts.slice(0, 6).map((product, index) => {
                   const category = product.product_category || product.category || 'General';
                   const unit = product.unit_of_measure || product.unit || 'kg';

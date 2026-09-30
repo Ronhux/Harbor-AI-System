@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { type LucideIcon, Menu, X, Bell, CircleHelp, ChevronRight, LogOut } from "lucide-react";
+import { type LucideIcon, Menu, X, Bell, CircleHelp, ChevronRight, LogOut, MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
@@ -41,6 +41,12 @@ export default function DashboardShell({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const desktopNavRef = useRef<HTMLElement>(null);
   const [hasMoreTabs, setHasMoreTabs] = useState(false);
+  const hasMobileDock = userRole !== "DA/LGU Personnel";
+  const primaryMobileIds = userRole === "Producer"
+    ? ["dashboard", "listings", "orders", "insights"]
+    : ["overview", "browse", "orders", "trends"];
+  const mobileTabs = primaryMobileIds.map((id) => tabs.find((tab) => tab.id === id)).filter((tab): tab is DashboardTab => Boolean(tab));
+  const mobileMoreTabs = tabs.filter((tab) => !primaryMobileIds.includes(tab.id));
 
   useEffect(() => {
     const nav = desktopNavRef.current;
@@ -131,7 +137,7 @@ export default function DashboardShell({
               type="button"
               variant="ghost"
               size="icon"
-              className="rounded-full text-[#123C5C] hover:bg-[#22C55E]/20 hover:text-[#15803D] lg:hidden"
+              className={`rounded-full text-[#123C5C] hover:bg-[#22C55E]/20 hover:text-[#15803D] lg:hidden ${hasMobileDock ? "hidden" : ""}`}
               onClick={() => setSidebarOpen((open) => !open)}
               aria-label="Open dashboard navigation"
               title="Dashboard navigation"
@@ -225,7 +231,16 @@ export default function DashboardShell({
 
       </header>
 
-      <main className="relative z-10 min-h-[calc(100vh-4rem)] w-full p-4 font-body sm:p-6 lg:p-8">{children}</main>
+      <main className={`relative z-10 min-h-[calc(100vh-4rem)] w-full p-3 font-body sm:p-6 lg:p-8 ${hasMobileDock ? "pb-24 sm:pb-24 lg:pb-8" : ""}`}>{children}</main>
+      {hasMobileDock && <nav aria-label="Mobile dashboard navigation" className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E7E1D0] bg-white/95 px-2 pt-2 shadow-[0_-6px_24px_rgba(18,60,92,0.12)] backdrop-blur lg:hidden" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}>
+        <div className="mx-auto flex max-w-xl items-stretch justify-around">
+          {mobileTabs.map((tab) => { const Icon = tab.icon; const selected = activeTab === tab.id; return <button key={tab.id} type="button" onClick={() => onTabChange(tab.id)} aria-label={tab.label} aria-current={selected ? "page" : undefined} className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-bold ${selected ? "text-[#0F9488]" : "text-[#617184]"}`}><Icon className="h-5 w-5" aria-hidden="true"/><span className="max-w-full truncate">{tab.label}</span></button>; })}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><button type="button" aria-label="More dashboard sections" className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-bold ${mobileMoreTabs.some((tab) => tab.id === activeTab) ? "text-[#0F9488]" : "text-[#617184]"}`}><MoreHorizontal className="h-5 w-5"/><span>More</span></button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="mb-2 w-56">{mobileMoreTabs.map((tab) => { const Icon = tab.icon; return <DropdownMenuItem key={tab.id} onClick={() => onTabChange(tab.id)} className="min-h-11"><Icon className="mr-2 h-4 w-4"/>{tab.label}</DropdownMenuItem>; })}</DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </nav>}
     </div>
   );
 }

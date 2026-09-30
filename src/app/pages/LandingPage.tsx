@@ -2565,9 +2565,11 @@ export default function LandingPage() {
 
           <div
             className="
-              flex
-              flex-col
-              gap-10
+              grid
+              grid-cols-2
+              gap-x-5
+              gap-y-6
+              md:flex
               md:flex-row
               md:justify-between
               md:items-start
@@ -2587,7 +2589,8 @@ export default function LandingPage() {
                 flex-col
                 items-center
                 md:items-start
-                mb-8
+                col-span-2
+                mb-0
                 md:mb-0
                 md:w-1/4
               "
@@ -2636,9 +2639,10 @@ export default function LandingPage() {
 
             <div
               className="
-                flex
-                flex-col
-                gap-6
+                grid
+                grid-cols-2
+                gap-5
+                md:flex
                 md:flex-row
                 md:gap-16
                 justify-center
@@ -2654,7 +2658,7 @@ export default function LandingPage() {
                   className="
                     font-bold
                     text-white
-                    mb-4
+                    mb-2
                     uppercase
                     text-sm
                     tracking-wide
@@ -2818,9 +2822,11 @@ export default function LandingPage() {
             className="
               border-t
               border-white/10
-              pt-8
+              pt-4
+              md:pt-8
               text-center
-              text-sm
+              text-xs
+              md:text-sm
             "
           >
 

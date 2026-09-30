@@ -489,7 +489,7 @@ export default function DashboardHome({
       {/* =========================================================
           STATS GRID
       ========================================================= */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
 
@@ -498,10 +498,10 @@ export default function DashboardHome({
               key={idx}
               className="border border-[#E7E1D0] transition-shadow duration-300 hover:shadow-md"
             >
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center justify-between">
+              <CardContent className="min-w-0 p-3 sm:p-6">
+                <div className="mb-2 flex items-center justify-between sm:mb-4">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${stat.iconBg}`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full sm:h-10 sm:w-10 ${stat.iconBg}`}
                   >
                     <Icon
                       className={`h-5 w-5 ${stat.iconColor}`}
@@ -526,11 +526,11 @@ export default function DashboardHome({
                 </div>
 
                 <div>
-                  <div className="text-2xl font-bold text-[#123C5C]">
+                  <div className="truncate text-lg font-bold leading-tight text-[#123C5C] sm:text-2xl">
                     {stat.value}
                   </div>
 
-                  <div className="text-sm text-[#45586B]">
+                  <div className="text-xs leading-tight text-[#45586B] sm:text-sm">
                     {stat.label}
                   </div>
                 </div>
@@ -597,7 +597,7 @@ export default function DashboardHome({
           ) : (
 
             /* PRODUCT GRID */
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
 
               {availableProducts
                 .slice(0, 6)
@@ -786,7 +786,7 @@ export default function DashboardHome({
 
             <ResponsiveContainer
               width="100%"
-              height={300}
+              height={260}
             >
               <LineChart data={salesData}>
 
@@ -795,9 +795,9 @@ export default function DashboardHome({
                   stroke="#E7E1D0"
                 />
 
-                <XAxis dataKey="month" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
 
-                <YAxis />
+                <YAxis width={48} tick={{ fontSize: 11 }} tickFormatter={(value: number) => `₱${Math.round(value / 1000)}K`} />
 
                 <Tooltip
                   formatter={(value: any) =>
@@ -925,18 +925,21 @@ export default function DashboardHome({
               (order) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between rounded-xl border border-[#E7E1D0] p-4 transition hover:bg-[#F5F1E5]"
+                  className="flex flex-col gap-2 rounded-xl border border-[#E7E1D0] p-3 transition hover:bg-[#F5F1E5] sm:flex-row sm:items-center sm:justify-between sm:p-4"
                 >
 
                   <div className="flex-1">
 
-                    <div className="mb-1 flex items-center gap-3">
+                    <div className="mb-1 flex min-w-0 items-center justify-between gap-2 sm:justify-start sm:gap-3">
+
+                      <span className="truncate font-semibold text-[#123C5C]">{order.product}</span>
 
                       <span className="font-medium text-[#123C5C]">
                         {order.id}
                       </span>
 
                       <Badge
+                        className="shrink-0"
                         variant={
                           order.status ===
                           'Delivered'
@@ -959,7 +962,7 @@ export default function DashboardHome({
 
                   </div>
 
-                  <div className="text-right">
+                  <div className="flex items-center justify-between gap-3 text-left sm:block sm:text-right">
 
                     <div className="font-bold text-[#123C5C]">
                       {order.amount}
