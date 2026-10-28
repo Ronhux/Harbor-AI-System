@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Search, MapPin, CheckCircle2, Star, ShoppingCart } from 'lucide-react';
+import { DashboardText, useDashboardCopy } from '../../../i18n/DashboardCopy';
+import { useCallback, useEffect, useState } from 'react';
+import { Search, MapPin, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
+import { request } from '../../../../lib/api';
+import { useLanguage } from '../../../i18n/useLanguage';
 
 type ProductListing = {
   listing_id: number;
@@ -33,10 +36,13 @@ type Producer = {
   type: 'Both' | 'Farmer' | 'Fisher';
   location: string;
   products: string[];
-  rating: number;
-  orders: number;
   verified: boolean;
-  price: string;
+  /**
+   * Raw verification text from the registry payload. Displayed verbatim so an
+   * unknown or unverified value is never shown as a successful verification.
+   */
+  verification_status?: string | null;
+  activeListingCount: number;
 
   // Producer profile picture
   image?: string | null;
@@ -48,6 +54,7 @@ type Producer = {
 type BrowseProducersProps = {
   pendingOrder?: { producerId: number; listingId: number } | null;
   onPendingOrderHandled?: () => void;
+  onOpenProducts?: (selection: { listingId: number; draft: { quantity: number; deliveryDate?: string; deliveryArrangement?: string } }) => void;
 };
 
 const getApiUrl = (path: string): string => {
@@ -231,15 +238,14 @@ const resolveProducerImage = (item: any): string | null => {
 };
 
 const normalizeProducer = (item: any): Producer => {
-  const productListings: ProductListing[] = Array.isArray(item.product_listings)
+  const productListings: ProductListing[] = (Array.isArray(item.product_listings)
     ? item.product_listings
-    : [];
+    : []).filter((listing: ProductListing) =>
+      ['active', 'available'].includes(String(listing.status || '').toLowerCase()) &&
+      Number(listing.quantity_available ?? listing.quantity ?? 0) > 0,
+    );
 
-  const products = Array.isArray(item.products)
-    ? item.products
-    : productListings
-        .map((listing: ProductListing) => listing.product_name)
-        .filter(Boolean);
+  const products = productListings.map((listing) => listing.product_name).filter(Boolean);
 
   const type =
     item.type === 'Fisher' || item.type === 'Fisherfolk'
@@ -250,25 +256,38 @@ const normalizeProducer = (item: any): Producer => {
 
   return {
     id: Number(item.id ?? item.producer_id ?? 0),
-    name: item.name || 'Verified Producer',
+    // Neutral fallback. A producer with no name on file is labelled as such
+    // rather than being given a trust-implying name.
+    name: item.name || 'Producer',
     type,
     location: item.location || 'N/A',
     products,
-    rating: Number(item.rating ?? 4.8),
-    orders: Number(item.orders ?? (products.length * 3 || 0)),
-    verified: Boolean(item.verified ?? true),
-    price: item.price || '₱0/kg',
+    // Only a value the registry actually supplies marks a producer verified;
+    // a missing field stays unverified instead of defaulting to true.
+    verified: ['verified', 'approved'].includes(String(item.verification_status ?? '').toLowerCase()),
+    verification_status: item.verification_status ?? null,
+    activeListingCount: productListings.length,
     image: resolveProducerImage(item),
     raw: item,
     product_listings: productListings,
   };
 };
 
-export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }: BrowseProducersProps) {
+export default function BrowseProducers({ pendingOrder, onPendingOrderHandled, onOpenProducts }: BrowseProducersProps) {
+  const copy = useDashboardCopy();
+  const { t } = useLanguage();
   const [selectedProducer, setSelectedProducer] = useState<Producer | null>(null);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [producers, setProducers] = useState<Producer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const displayedProducers = producers.filter((producer) => {
+    const query = searchTerm.trim().toLocaleLowerCase();
+    if (!query) return true;
+    return [producer.name, producer.location, producer.type, ...producer.products]
+      .some((value) => String(value || '').toLocaleLowerCase().includes(query));
+  });
 
   // Order states
   const [selectedListingId, setSelectedListingId] = useState<string>('');
@@ -281,39 +300,21 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
   const [orderMessage, setOrderMessage] = useState('');
   const [orderError, setOrderError] = useState('');
 
-  useEffect(() => {
-    const fetchProducers = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-
-        const response = await fetch('/api/buyer/producers', {
-          headers: {
-            Accept: 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Unable to load producers');
-        }
-
-        const result = await response.json();
-
-        const nextProducers = Array.isArray(result.data)
-          ? result.data.map(normalizeProducer)
-          : [];
-
-        setProducers(nextProducers);
-      } catch (error) {
-        console.error('Failed to fetch producers', error);
-        setProducers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducers();
+  const loadProducers = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const result = await request('/api/buyer/producers');
+      setProducers(Array.isArray(result?.data) ? result.data.map(normalizeProducer) : []);
+    } catch (error: any) {
+      setLoadError(error?.message || 'Unable to load producers.');
+      setProducers([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void loadProducers(); }, [loadProducers]);
 
   useEffect(() => {
     if (loading || !pendingOrder) return;
@@ -396,410 +397,203 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
    * orders
    * order_details
    */
-  const handlePlaceOrder = async () => {
-    setOrderMessage('');
-    setOrderError('');
-
-    if (!selectedProducer) {
-      setOrderError('Pumili ng producer.');
-      return;
-    }
-
-    if (!selectedListingId) {
-      setOrderError('Pumili ng produkto.');
-      return;
-    }
-
+  const handlePlaceOrder = () => {
     if (!selectedListing) {
-      setOrderError('Hindi makita ang napiling product listing.');
+      setOrderError('Choose an available product listing to continue.');
       return;
     }
 
-    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) {
-      setOrderError('Maglagay ng valid na quantity na higit sa 0.');
+    const quantity = Number(orderQuantity);
+    const available = Number(selectedListing.quantity_available ?? selectedListing.quantity ?? 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setOrderError('Enter a quantity greater than zero.');
+      return;
+    }
+    if (quantity > available) {
+      setOrderError(`The listing has ${available.toLocaleString()} ${selectedListing.unit_of_measure || selectedListing.unit || 'units'} available.`);
       return;
     }
 
-    const availableQuantity =
-      selectedListing.quantity_available !== undefined
-        ? Number(selectedListing.quantity_available)
-        : null;
-
-    if (
-      availableQuantity !== null &&
-      Number.isFinite(availableQuantity) &&
-      numericQuantity > availableQuantity
-    ) {
-      setOrderError(
-        `Hindi sapat ang stock. ${availableQuantity.toLocaleString()} units lamang ang available.`
-      );
-      return;
-    }
-
-    if (!deliveryDate) {
-      setOrderError('Pumili ng delivery date.');
-      return;
-    }
-
-    if (deliveryDate < getTodayLocal()) {
-      setOrderError('Hindi maaaring pumili ng nakaraang delivery date.');
-      return;
-    }
-
-    const trimmedAddress = shippingAddress.trim();
-
-    if (!trimmedAddress) {
-      setOrderError('Maglagay ng shipping address.');
-      return;
-    }
-
-    const listingId = Number(selectedListing.listing_id);
-
-    if (!Number.isInteger(listingId) || listingId <= 0) {
-      setOrderError(
-        'Invalid ang product listing ID. Hindi maaaring ma-create ang order.'
-      );
-      return;
-    }
-
-    try {
-      setPlacingOrder(true);
-
-      const token = localStorage.getItem('authToken');
-      const xsrfToken = getXsrfToken();
-
-      /*
-       * This is the exact payload expected by the existing
-       * frontend order workflow:
-       *
-       * listing_id
-       * quantity
-       * shipping_address
-       * delivery_date
-       */
-      const orderPayload = {
-        listing_id: listingId,
-        quantity: numericQuantity,
-        shipping_address: trimmedAddress,
-        delivery_date: deliveryDate,
-      };
-
-      console.log('========================================');
-      console.log('HarborAI ORDER SUBMISSION');
-      console.log('Endpoint:', getApiUrl('/api/orders'));
-      console.log('Payload:', orderPayload);
-      console.log('Auth token present:', Boolean(token));
-      console.log('========================================');
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      };
-
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      if (xsrfToken) {
-        headers['X-XSRF-TOKEN'] = xsrfToken;
-      }
-
-      let response: Response;
-
-      try {
-        response = await fetch(getApiUrl('/api/orders'), {
-          method: 'POST',
-          headers,
-          credentials: 'same-origin',
-          body: JSON.stringify(orderPayload),
-        });
-      } catch (networkError) {
-        console.error('HarborAI order network error:', networkError);
-
-        throw new Error(
-          'Hindi ma-contact ang Laravel order API. Siguraduhing tumatakbo ang Laravel server at gamitin ang parehong URL kung saan binuksan ang HarborAI.'
-        );
-      }
-
-      console.log(
-        'HarborAI ORDER RESPONSE:',
-        response.status,
-        response.statusText
-      );
-
-      if (!response.ok) {
-        const serverError = await extractServerError(response);
-
-        /*
-         * The backend previously returned the generic:
-         * "Failed to place order."
-         *
-         * Do not hide that the failure is coming from Laravel.
-         * Add the HTTP status so the problem can be diagnosed.
-         */
-        if (
-          serverError.trim().toLowerCase() === 'failed to place order.' ||
-          serverError.trim().toLowerCase() === 'failed to place order'
-        ) {
-          throw new Error(
-            `Laravel rejected the order (HTTP ${response.status}). The /api/orders request reached the server, but the backend failed while creating the order. Check the Laravel OrderController/database error.`
-          );
-        }
-
-        throw new Error(
-          `HTTP ${response.status}: ${serverError}`
-        );
-      }
-
-      let result: any = {};
-
-      try {
-        result = await response.json();
-      } catch {
-        result = {};
-      }
-
-      console.log('HarborAI ORDER CREATED:', result);
-
-      setOrderMessage('Matagumpay na na-place ang order!');
-
-      window.dispatchEvent(
-        new CustomEvent('orderPlaced', {
-          detail: {
-            order: result?.order ?? result?.data ?? result,
-          },
-        })
-      );
-
-      setTimeout(() => {
-        setShowOrderDialog(false);
-        setSelectedProducer(null);
-        setSelectedListingId('');
-        setOrderQuantity('');
-        setDeliveryDate('');
-        setShippingAddress('');
-        setOrderMessage('');
-        setOrderError('');
-      }, 1000);
-    } catch (error: unknown) {
-      console.error('========================================');
-      console.error('HarborAI ORDER FAILED');
-      console.error(error);
-      console.error('========================================');
-
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : 'May nangyaring problema habang nagpa-place ng order.';
-
-      setOrderError(message);
-    } finally {
-      setPlacingOrder(false);
-    }
+    setOrderError('');
+    onPendingOrderHandled?.();
+    onOpenProducts?.({
+      listingId: selectedListing.listing_id,
+      draft: {
+        quantity,
+        deliveryDate: deliveryDate || undefined,
+        deliveryArrangement: shippingAddress.trim() || undefined,
+      },
+    });
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Browse Producers
+        <h1 className="font-display text-2xl tracking-tight text-foreground sm:text-3xl">
+          {t('buyer.browseProducersPage.pageTitle')}
         </h1>
 
-        <p className="text-gray-600 mt-1">
-          Hanapin ang verified producers para sa iyong institutional supply needs
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t('buyer.browseProducersPage.subtitle')}
         </p>
       </div>
 
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid md:grid-cols-4 gap-4">
-            <Input placeholder="Maghanap ayon sa produkto..." />
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={copy("Maghanap ng producer, produkto, o lokasyon...")} className="pl-9" aria-label={copy("Maghanap ng producer, produkto, o lokasyon")} />
+            </div>
 
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Uri ng Producer" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="all">Lahat ng Uri</SelectItem>
-                <SelectItem value="farmer">Farmer</SelectItem>
-                <SelectItem value="fisher">Fisher</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Lokasyon" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="all">Lahat ng Lokasyon</SelectItem>
-                <SelectItem value="centro">Brgy. Centro</SelectItem>
-                <SelectItem value="macanaya">Brgy. Macanaya</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button>Maghanap</Button>
+            <Button type="button" variant="outline" onClick={() => setSearchTerm('')} disabled={!searchTerm}>{t('buyer.browseProducersPage.clearSearch')}</Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Loading */}
       {loading && (
-        <div className="text-center py-10 text-gray-600">
-          Nilo-load ang producers...
+        <div className="text-center py-10 text-muted-foreground">
+          {t('buyer.browseProducersPage.loading')}
         </div>
       )}
 
       {/* Empty */}
-      {!loading && producers.length === 0 && (
+      {!loading && loadError && (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-6">
+            <p role="alert" className="text-sm text-red-700">{loadError}</p>
+            <Button type="button" variant="outline" onClick={() => void loadProducers()}>{t('buyer.browseProducersPage.retry')}</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !loadError && displayedProducers.length === 0 && (
         <Card>
           <CardContent className="p-10 text-center">
-            <p className="text-gray-600">
-              Walang nakitang producers.
+            <p className="text-muted-foreground">
+              {producers.length ? t('buyer.browseProducersPage.noSearchResults') : t('buyer.browseProducersPage.noProducers')}
             </p>
           </CardContent>
         </Card>
       )}
 
       {/* Producers Grid */}
-      {!loading && producers.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-6">
-          {producers.map((producer) => (
+      {!loading && !loadError && displayedProducers.length > 0 && (
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {displayedProducers.map((producer) => (
             <Card
               key={producer.id}
-              className="border-2 hover:shadow-lg transition"
+              className="group min-w-0 overflow-hidden border-border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-[#0F9488] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center">
-                      {producer.image ? (
-                        <img
-                          src={producer.image}
-                          alt={`${producer.name} profile`}
-                          className="w-full h-full object-cover"
-                          onError={(event) => {
-                            event.currentTarget.style.display = 'none';
+              <CardHeader className="p-0">
+                <div className="flex flex-col items-center gap-3 p-3 text-center sm:p-4">
+                  <div className="w-16 h-16 shrink-0 overflow-hidden rounded-full border-2 border-white shadow-md bg-gradient-to-br from-[#0F9488] to-[#22C55E] flex items-center justify-center">
+                    {producer.image ? (
+                      <img
+                        src={producer.image}
+                        alt={`${producer.name} profile`}
+                        className="w-full h-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
 
-                            const fallback =
-                              event.currentTarget.parentElement?.querySelector(
-                                '[data-avatar-fallback]'
-                              ) as HTMLElement | null;
+                          const fallback =
+                            event.currentTarget.parentElement?.querySelector(
+                              '[data-avatar-fallback]'
+                            ) as HTMLElement | null;
 
-                            if (fallback) {
-                              fallback.classList.remove('hidden');
-                            }
-                          }}
-                        />
-                      ) : null}
+                          if (fallback) {
+                            fallback.classList.remove('hidden');
+                          }
+                        }}
+                      />
+                    ) : null}
 
-                      <span
-                        data-avatar-fallback
-                        className={`text-white font-bold text-2xl ${
-                          producer.image ? 'hidden' : ''
-                        }`}
-                      >
-                        {producer.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-lg">
-                          {producer.name}
-                        </CardTitle>
-
-                        {producer.verified && (
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="w-3 h-3" />
-                        {producer.location}
-                      </div>
-                    </div>
+                    <span
+                      data-avatar-fallback
+                      className={`text-white font-bold text-2xl ${
+                        producer.image ? 'hidden' : ''
+                      }`}
+                    >
+                      {producer.name.charAt(0).toUpperCase()}
+                    </span>
                   </div>
 
-                  <Badge variant="secondary">
-                    {producer.type}
-                  </Badge>
+                  <div className="min-w-0 w-full">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <CardTitle className="line-clamp-2 min-w-0 text-sm font-bold text-foreground sm:text-base">
+                        {producer.name}
+                      </CardTitle>
+
+                      {producer.verified && (
+                        <CheckCircle2
+                          className="w-4 h-4 shrink-0 text-green-600"
+                          aria-label={copy("Verified")}
+                        />
+                      )}
+                    </div>
+
+                    <div className="mt-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      <span className="line-clamp-1">{producer.location}</span>
+                    </div>
+
+                    <div className="mt-2 flex justify-center">
+                      <Badge variant="secondary" className="text-[0.65rem]">
+                        {producer.type}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="text-xs text-gray-600 mb-2">
-                    Mga Produktong Inaalok
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {producer.products.map((product, idx) => (
-                      <Badge key={idx} variant="outline">
-                        {product}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 text-center py-3 bg-gray-50 rounded-lg">
+              <CardContent className="space-y-3 p-3 pt-0 sm:p-4 sm:pt-0">
+                {/* Compact product summary: "Banana, Camote, Palay +3" */}
                   <div>
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-wide text-muted-foreground">
+                      {t('buyer.browseProducersPage.productsHeader')}
+                    </p>
 
-                      <span className="font-bold text-gray-900">
-                        {producer.rating}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-gray-600">
-                      Rating
-                    </div>
+                    {producer.products.length > 0 ? (
+                      <p className="line-clamp-2 text-xs leading-snug text-foreground sm:text-sm" title={producer.products.join(', ')}>
+                        {producer.products.slice(0, 3).join(', ')}
+                        {producer.products.length > 3
+                          ? ` +${producer.products.length - 3}`
+                          : ''}
+                      </p>
+                    ) : (
+                      <p className="text-xs italic text-muted-foreground sm:text-sm">
+                        {t('buyer.browseProducersPage.noActiveListings')}
+                      </p>
+                    )}
                   </div>
 
-                  <div>
-                    <div className="font-bold text-gray-900 mb-1">
-                      {producer.orders}
-                    </div>
-
-                    <div className="text-xs text-gray-600">
-                      Orders
-                    </div>
+                  <div className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-xs sm:text-sm">
+                    <span className="text-muted-foreground">{t('buyer.browseProducersPage.availableListings')}</span>
+                    <span className="font-bold text-foreground">{producer.activeListingCount}</span>
                   </div>
 
-                  <div>
-                    <div className="font-bold text-green-600 mb-1">
-                      {producer.price}
-                    </div>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      className="min-h-11 w-full"
+                      variant="outline"
+                      onClick={() =>
+                        setSelectedProducer(producer)
+                      }
+                    >
+                      {t('buyer.browseProducersPage.viewProfile')}
+                    </Button>
 
-                    <div className="text-xs text-gray-600">
-                      Average Price
-                    </div>
+                    <Button
+                      className="min-h-11 w-full bg-[#0F9488] font-bold text-white hover:bg-[#0D7F76]"
+                      onClick={() => openOrderDialog(producer)}
+                      disabled={producer.activeListingCount === 0}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" aria-hidden="true" />
+                      {t('buyer.browseProducersPage.placeOrder')}
+                    </Button>
                   </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    variant="outline"
-                    onClick={() =>
-                      setSelectedProducer(producer)
-                    }
-                  >
-                    Tingnan ang Profile
-                  </Button>
-
-                  <Button
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    onClick={() => openOrderDialog(producer)}
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Mag-order
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           ))}
@@ -814,11 +608,11 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Profile ng Producer
+              {t('buyer.browseProducersPage.dialogTitle')}
             </DialogTitle>
 
             <DialogDescription>
-              Detalyadong impormasyon tungkol kay {selectedProducer?.name}
+              {t('buyer.browseProducersPage.dialogDescription').replace('{name}', selectedProducer?.name ?? '')}
             </DialogDescription>
           </DialogHeader>
 
@@ -860,15 +654,18 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                   {selectedProducer.name}
                 </h3>
 
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   {selectedProducer.type} • {selectedProducer.location}
                 </p>
+                {selectedProducer.raw?.contact_number && <p className="text-sm text-muted-foreground">{t('buyer.browseProducersPage.contactLabel')} {selectedProducer.raw.contact_number}</p>}
+                {selectedProducer.raw?.email && <p className="break-all text-sm text-muted-foreground">{t('buyer.browseProducersPage.emailLabel')} {selectedProducer.raw.email}</p>}
+                {selectedProducer.raw?.primary_product_type && <p className="text-sm text-muted-foreground">{t('buyer.browseProducersPage.primaryProductLabel')} {selectedProducer.raw.primary_product_type}</p>}
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    Mga Produkto:
+                  <span className="text-muted-foreground">
+                    {t('buyer.browseProducersPage.productsLabel')}
                   </span>
 
                   <div className="flex gap-1 flex-wrap justify-end">
@@ -886,45 +683,23 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 </div>
 
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    Rating:
-                  </span>
+                  <span className="text-muted-foreground">{t('buyer.browseProducersPage.availableListingsLabel')}</span>
+                  <span className="font-bold">{selectedProducer.activeListingCount}</span>
+                </div>
 
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">{t('buyer.browseProducersPage.verificationLabel')}</span>
 
-                    <span className="font-bold">
-                      {selectedProducer.rating}
+                  {selectedProducer.verified ? (
+                    <span className="inline-flex items-center gap-1.5 font-bold text-green-700">
+                      <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
+                      {selectedProducer.verification_status || copy("Verified")}
                     </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    Kabuuang Orders:
-                  </span>
-
-                  <span className="font-bold">
-                    {selectedProducer.orders}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    Average Price:
-                  </span>
-
-                  <span className="font-bold text-green-600">
-                    {selectedProducer.price}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    Verified:
-                  </span>
-
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {selectedProducer.verification_status || t('buyer.browseProducersPage.notConfirmedByRegistry')}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -939,28 +714,26 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
       >
         <DialogContent className="w-[calc(100vw-2rem)] max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Mag-place ng Order
-            </DialogTitle>
+            <DialogTitle><DashboardText text="Contact Producer to Negotiate" /></DialogTitle>
 
             <DialogDescription>
-              Mag-order kay {selectedProducer?.name}
+              {t('buyer.browseProducersPage.orderDialogDescription')}
             </DialogDescription>
           </DialogHeader>
 
           {selectedProducer && (
             <div className="space-y-4">
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-muted rounded-lg">
                 <h4 className="font-bold mb-2">
-                  Napiling Producer
+                  {t('buyer.browseProducersPage.selectedProducerLabel')}
                 </h4>
 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {selectedProducer.name}
                 </p>
 
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {selectedProducer.location}
                 </p>
               </div>
@@ -970,7 +743,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 {/* Product */}
                 <div>
                   <label className="text-sm font-medium">
-                    Produkto
+                    {t('buyer.browseProducersPage.productLabel')}
                   </label>
 
                   <Select
@@ -982,7 +755,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Pumili ng produkto" />
+                      <SelectValue placeholder={t('buyer.browseProducersPage.chooseProductPlaceholder')} />
                     </SelectTrigger>
 
                     <SelectContent>
@@ -1018,8 +791,8 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 {selectedListing && (
                   <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">
-                        Produkto:
+                      <span className="text-muted-foreground">
+                        {t('buyer.browseProducersPage.productDetailLabel')}
                       </span>
 
                       <span className="font-medium">
@@ -1028,8 +801,8 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                     </div>
 
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">
-                        Presyo:
+                      <span className="text-muted-foreground">
+                        {t('buyer.browseProducersPage.priceLabel')}
                       </span>
 
                       <span className="font-medium">
@@ -1045,8 +818,8 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                     {selectedListing.quantity_available !==
                       undefined && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">
-                          Available:
+                        <span className="text-muted-foreground">
+                          {t('buyer.browseProducersPage.availableLabel')}
                         </span>
 
                         <span className="font-medium">
@@ -1060,14 +833,14 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 {/* Quantity */}
                 <div>
                   <label className="text-sm font-medium">
-                    Quantity (kg)
+                    {t('buyer.browseProducersPage.quantityLabel').replace('{unit}', selectedListing?.unit_of_measure || selectedListing?.unit || 'units')}
                   </label>
 
                   <Input
                     type="number"
                     min="0.01"
                     step="0.01"
-                    placeholder="Ilagay ang quantity"
+                    placeholder={copy("Ilagay ang quantity")}
                     value={orderQuantity}
                     onChange={(event) =>
                       setOrderQuantity(event.target.value)
@@ -1078,7 +851,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 {/* Delivery Date */}
                 <div>
                   <label className="text-sm font-medium">
-                    Delivery Date
+                    {t('buyer.browseProducersPage.deliveryDateLabel')}
                   </label>
 
                   <Input
@@ -1094,12 +867,12 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 {/* Shipping Address */}
                 <div>
                   <label className="text-sm font-medium">
-                    Shipping Address
+                    {t('buyer.browseProducersPage.shippingAddressLabel')}
                   </label>
 
                   <Input
                     type="text"
-                    placeholder="Ilagay ang shipping address"
+                    placeholder={t('buyer.browseProducersPage.shippingAddressPlaceholder')}
                     value={shippingAddress}
                     onChange={(event) =>
                       setShippingAddress(event.target.value)
@@ -1112,8 +885,8 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                   numericQuantity > 0 && (
                     <div className="p-4 bg-green-50 border border-green-100 rounded-lg">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          Presyo bawat Unit:
+                        <span className="text-muted-foreground">
+                          {t('buyer.browseProducersPage.unitPriceLabel')}
                         </span>
 
                         <span className="font-medium">
@@ -1122,8 +895,8 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                       </div>
 
                       <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          Quantity:
+                        <span className="text-muted-foreground">
+                          {t('buyer.browseProducersPage.quantityLabel2')}
                         </span>
 
                         <span className="font-medium">
@@ -1133,7 +906,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
 
                       <div className="flex justify-between pt-2 mt-2 border-t">
                         <span className="font-bold">
-                          Kabuuan:
+                          {t('buyer.browseProducersPage.totalLabel')}
                         </span>
 
                         <span className="font-bold text-green-600 text-lg">
@@ -1153,13 +926,13 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                 {/* Error Message */}
                 {orderError && (
                   <div className="p-3 bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm leading-relaxed">
-                    <div className="font-semibold">Hindi na-place ang order.</div>
+                    <div className="font-semibold">{t('buyer.browseProducersPage.cannotContinue')}</div>
                     <div className="mt-1">{orderError}</div>
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-2 pt-4">
+                <div className="flex gap-2 pt-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -1167,7 +940,7 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                   className="flex-1"
                   disabled={placingOrder}
                 >
-                  Kanselahin
+                  {t('buyer.browseProducersPage.cancelButton')}
                 </Button>
 
                 <Button
@@ -1177,8 +950,8 @@ export default function BrowseProducers({ pendingOrder, onPendingOrderHandled }:
                   disabled={placingOrder}
                 >
                   {placingOrder
-                    ? 'Nilo-load ang Order...'
-                    : 'Mag-place ng Order'}
+                    ? t('buyer.browseProducersPage.loadingOrder')
+                    : t('buyer.browseProducersPage.continueToNegotiation')}
                 </Button>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -32,6 +33,7 @@ function SheetOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
@@ -40,7 +42,7 @@ function SheetOverlay({
         className,
       )}
       {...props}
-    />
+    data-harbor-dashboard-theme={portalTheme} />
   );
 }
 
@@ -52,6 +54,7 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left";
 }) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -70,7 +73,7 @@ function SheetContent({
           className,
         )}
         {...props}
-      >
+       data-harbor-dashboard-theme={portalTheme}>
         {children}
         <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" />

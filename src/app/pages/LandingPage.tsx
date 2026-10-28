@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Menu,
   X,
-  ShoppingCart,
   ArrowUpRight,
   Search,
   ClipboardList,
@@ -23,6 +22,7 @@ import {
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import DevelopmentTeam from '../components/DevelopmentTeam';
 
 
 export default function LandingPage() {
@@ -72,7 +72,7 @@ export default function LandingPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#F5F1E5] font-body text-[#123C5C] scrollbar-hide"
+      className="min-h-screen bg-background font-body text-foreground scrollbar-hide"
       style={{ overflowX: 'hidden' }}
     >
 
@@ -172,6 +172,9 @@ export default function LandingPage() {
           letter-spacing: -0.02em;
         }
 
+        html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
+        section[id] { scroll-margin-top: 5.5rem; }
+
         .workflow-image {
           animation: workflowFloat 6s ease-in-out infinite;
         }
@@ -190,6 +193,9 @@ export default function LandingPage() {
         }
 
         @media (prefers-reduced-motion: reduce) {
+          html { scroll-behavior: auto; }
+          .hero-bg, .hero-content, .hero-kicker, .floating-badge { animation: none !important; }
+          *, *::before, *::after { transition-duration: .01ms !important; }
           .workflow-image,
           .workflow-image-layer,
           .workflow-step {
@@ -215,7 +221,7 @@ export default function LandingPage() {
           NAVIGATION
       ========================================================= */}
 
-      <nav className="fixed top-0 left-0 w-full z-50 bg-[#F5F1E5]/95 backdrop-blur-md border-b border-[#E7E1D0]">
+      <nav className="fixed top-0 left-0 w-full z-50 bg-background/95 backdrop-blur-md border-b border-border">
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -235,7 +241,7 @@ export default function LandingPage() {
                 className="w-9 h-9 sm:w-11 sm:h-11 object-contain"
               />
 
-              <span className="font-display text-xl sm:text-2xl text-[#123C5C] whitespace-nowrap tracking-tight">
+              <span className="font-display text-xl sm:text-2xl text-foreground whitespace-nowrap tracking-tight">
                 HarborAI
               </span>
 
@@ -266,13 +272,6 @@ export default function LandingPage() {
               >
                 Benefits
               </a>
-
-              <Link
-                to="/programs"
-                className="text-sm font-bold uppercase tracking-wide text-[#315D35] hover:text-[#22C55E] transition-colors"
-              >
-                Programs
-              </Link>
 
               <Link
                 to="/faq"
@@ -321,7 +320,7 @@ export default function LandingPage() {
                     rounded-xl
                     bg-[#FBBE24]
                     hover:bg-[#F59E0B]
-                    text-[#123C5C]
+                    text-foreground
                     shadow-sm
                     transition-all
                     duration-200
@@ -347,7 +346,7 @@ export default function LandingPage() {
                   justify-center
                   rounded-xl
                   p-2
-                  text-[#123C5C]
+                  text-foreground
                   transition-colors
                   hover:bg-[#123C5C]/10
                   focus:outline-none
@@ -358,7 +357,7 @@ export default function LandingPage() {
                 aria-label="Toggle navigation menu"
                 aria-expanded={menuOpen}
                 onClick={() => {
-                  
+
                   setMenuOpen((value) => !value);
                 }}
               >
@@ -398,8 +397,8 @@ export default function LandingPage() {
                 max-h-[calc(100vh-4rem)]
                 overflow-y-auto
                 border-t
-                border-[#E7E1D0]
-                bg-[#F5F1E5]
+                border-border
+                bg-background
                 px-4
                 py-4
                 shadow-xl
@@ -413,7 +412,7 @@ export default function LandingPage() {
               <a
                 href="#features"
                 onClick={() => setMenuOpen(false)}
-                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-white"
+                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-card"
               >
                 Features
               </a>
@@ -421,7 +420,7 @@ export default function LandingPage() {
               <a
                 href="#how-it-works"
                 onClick={() => setMenuOpen(false)}
-                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-white"
+                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-card"
               >
                 How It Works
               </a>
@@ -429,23 +428,15 @@ export default function LandingPage() {
               <a
                 href="#benefits"
                 onClick={() => setMenuOpen(false)}
-                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-white"
+                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-card"
               >
                 Benefits
               </a>
 
               <Link
-                to="/programs"
-                onClick={() => setMenuOpen(false)}
-                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-white"
-              >
-                Programs
-              </Link>
-
-              <Link
                 to="/faq"
                 onClick={() => setMenuOpen(false)}
-                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-white"
+                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-card"
               >
                 FAQ
               </Link>
@@ -453,7 +444,7 @@ export default function LandingPage() {
               <a
                 href="#about"
                 onClick={() => setMenuOpen(false)}
-                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-white"
+                className="px-3 py-3.5 rounded-lg font-bold uppercase text-sm text-[#315D35] hover:bg-card"
               >
                 About
               </a>
@@ -464,6 +455,7 @@ export default function LandingPage() {
                   <Button
                     variant="outline"
                     className="
+                      min-h-11
                       w-full
                       rounded-xl
                       font-bold
@@ -482,12 +474,13 @@ export default function LandingPage() {
                 <Link to="/register">
                   <Button
                     className="
+                      min-h-11
                       w-full
                       rounded-xl
                       font-bold
                       bg-[#FBBE24]
                       hover:bg-[#F59E0B]
-                      text-[#123C5C]
+                      text-foreground
                     "
                     onClick={() => {
                       setMenuOpen(false);
@@ -516,36 +509,34 @@ export default function LandingPage() {
         {/* Background */}
 
         <img
-          src="/Images/landing-hero-aparri.png"
-          alt="Aparri agricultural landscape"
+          src="/Images/HARBORAI_BG.png"
+          alt="HarborAI background"
           className="absolute inset-0 h-full w-full object-cover hero-bg"
         />
 
 
         {/* Readability overlays */}
 
-        <div className="absolute inset-0 bg-white/25" />
+        <div className="absolute inset-0 bg-card/25" />
 
         <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/10 to-[#123C5C]/45" />
 
 
         {/* Hero Content */}
 
-        <div className="relative z-10 flex min-h-[calc(100svh-64px)] md:min-h-[calc(100svh-80px)] items-start justify-center px-4 pt-20 sm:px-8 md:pt-24 lg:pt-28">
+        <div className="relative z-10 flex min-h-[calc(100svh-64px)] md:min-h-[calc(100svh-80px)] items-center justify-center px-4 pt-14 pb-6 sm:px-8 sm:pt-16 md:pt-20 md:pb-10">
 
           <div className="w-full max-w-7xl text-center hero-content">
 
             {/* Location Badge */}
 
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#4D8B35]/95 px-6 py-3 shadow-lg backdrop-blur-sm hero-kicker">
-
-              <Sprout className="h-5 w-5 text-white" />
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#4D8B35]/95 px-5 py-2.5 shadow-lg backdrop-blur-sm hero-kicker sm:px-6 sm:py-3">
 
               <span
                 className="text-xs font-black uppercase tracking-[0.18em] text-white sm:text-sm"
                 style={{ fontFamily: "'Baloo 2', sans-serif" }}
               >
-                From the Heart of Aparri
+                🌱 FROM THE HEART OF APARRI
               </span>
 
             </div>
@@ -578,7 +569,7 @@ export default function LandingPage() {
                     textShadow: "0 2px 10px rgba(255,255,255,0.35)",
                   }}
                 >
-                  ANI AT HULI NG APARRI
+                  ANI AT HULI NG APARRIANO
                 </h2>
 
               </div>
@@ -609,7 +600,7 @@ export default function LandingPage() {
                     textShadow: "0 4px 18px rgba(255,255,255,0.35)",
                   }}
                 >
-                  DIRETSO SA’YO!
+                  DIRETSO SA MERKADO!
                 </h1>
 
               </div>
@@ -638,29 +629,29 @@ export default function LandingPage() {
             <p
               className="
                 mx-auto
-                mt-7
-                max-w-2xl
+                mt-6
+                max-w-3xl
                 px-4
                 text-base
                 font-semibold
                 leading-relaxed
-                text-[#123C5C]
+                text-foreground
+                sm:mt-7
                 sm:text-lg
                 md:text-xl
               "
               style={{
                 fontFamily: "'Baloo 2', sans-serif",
-                textShadow: "0 1px 8px rgba(255,255,255,0.6)",
+                textShadow: "0 1px 3px rgba(255,255,255,0.95), 0 2px 12px rgba(255,255,255,0.9)",
               }}
             >
-              Fresh agricultural and fishery products from local
-              farmers and fisherfolk in Aparri — straight to your home.
+              Connecting Aparri's local farmers with institutional buyers through a smarter, more direct, and transparent agricultural trading platform.
             </p>
 
 
             {/* CTA */}
 
-            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 px-2 sm:flex-row sm:items-center sm:px-0 sm:gap-4">
+            <div className="mt-7 flex flex-col items-stretch justify-center gap-3 px-2 sm:mt-8 sm:flex-row sm:items-center sm:px-0 sm:gap-4">
 
               <Link to="/login">
 
@@ -675,7 +666,7 @@ export default function LandingPage() {
                     font-black
                     uppercase
                     tracking-wide
-                    text-[#123C5C]
+                    text-foreground
                     shadow-lg
                     transition-all
                     duration-200
@@ -685,14 +676,14 @@ export default function LandingPage() {
                     hero-button
                   "
                 >
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  ORDER NA!
+                  <ArrowUpRight className="mr-2 h-5 w-5" />
+                  EXPLORE HARBORAI
                 </Button>
 
               </Link>
 
 
-              <Link to="/programs">
+              <a href="#benefits">
 
                 <Button
                   className="
@@ -716,45 +707,45 @@ export default function LandingPage() {
                   "
                 >
                   <TrendingUp className="mr-2 h-5 w-5" />
-                  PRICE TRACKER
+                  VIEW BENEFITS
                 </Button>
 
-              </Link>
+              </a>
 
             </div>
 
 
             {/* Trust badges */}
 
-            <div className="mt-7 flex flex-wrap justify-center gap-3 pb-8 sm:pb-10 md:pb-12">
+            <div className="mt-6 flex flex-wrap justify-center gap-2.5 pb-6 sm:mt-7 sm:gap-3 sm:pb-10 md:pb-12">
 
-              <div className="flex items-center gap-2 rounded-full bg-white/90 px-5 py-2.5 shadow-md backdrop-blur-sm">
+              <div className="flex items-center gap-2 rounded-full bg-card/90 px-5 py-2.5 shadow-md backdrop-blur-sm">
 
                 <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
 
-                <span className="text-sm font-bold text-[#123C5C]">
+                <span className="text-sm font-bold text-foreground">
                   Verified Producers
                 </span>
 
               </div>
 
 
-              <div className="flex items-center gap-2 rounded-full bg-white/90 px-5 py-2.5 shadow-md backdrop-blur-sm">
+              <div className="flex items-center gap-2 rounded-full bg-card/90 px-5 py-2.5 shadow-md backdrop-blur-sm">
 
                 <Fish className="h-4 w-4 text-[#0F9488]" />
 
-                <span className="text-sm font-bold text-[#123C5C]">
-                  Agri-Fish Trading
+                <span className="text-sm font-bold text-foreground">
+                  Institutional Trading
                 </span>
 
               </div>
 
 
-              <div className="flex items-center gap-2 rounded-full bg-white/90 px-5 py-2.5 shadow-md backdrop-blur-sm">
+              <div className="flex items-center gap-2 rounded-full bg-card/90 px-5 py-2.5 shadow-md backdrop-blur-sm">
 
-                <BarChart3 className="h-4 w-4 text-[#123C5C]" />
+                <BarChart3 className="h-4 w-4 text-foreground" />
 
-                <span className="text-sm font-bold text-[#123C5C]">
+                <span className="text-sm font-bold text-foreground">
                   AI-Powered
                 </span>
 
@@ -781,8 +772,8 @@ export default function LandingPage() {
       <section
         id="features"
         className="
-          bg-white
-          py-20
+          bg-card
+          py-16
           sm:py-24
           scroll-mt-20
           md:scroll-mt-24
@@ -791,7 +782,7 @@ export default function LandingPage() {
 
         <div className="container mx-auto px-4">
 
-          <div className="text-center mb-14 md:mb-16">
+          <div className="text-center mb-10 md:mb-14">
 
             <p
               className="
@@ -812,7 +803,7 @@ export default function LandingPage() {
                 text-4xl
                 sm:text-5xl
                 md:text-6xl
-                text-[#123C5C]
+                text-foreground
                 mb-4
                 section-heading
               "
@@ -823,19 +814,19 @@ export default function LandingPage() {
             <p
               className="
                 text-lg
-                text-[#45586B]
+                text-muted-foreground
                 max-w-2xl
                 mx-auto
               "
             >
-              Built to support the entire agricultural and fishery
+              Built to support the entire agricultural
               value chain in Aparri, Cagayan.
             </p>
 
           </div>
 
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 gap-4 min-[400px]:gap-5 lg:gap-6">
 
             {/* FEATURE 1 */}
 
@@ -844,29 +835,32 @@ export default function LandingPage() {
                 group
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:border-[#22C55E]
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 duration-300
-                bg-white
+                bg-card
               "
             >
 
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
 
                 <div
                   className="
-                    w-14
-                    h-14
+                    w-12
+                    h-12
+                    sm:w-14
+                    sm:h-14
                     bg-[#22C55E]
                     rounded-2xl
                     flex
                     items-center
                     justify-center
-                    mb-4
+                    mb-3
+                    sm:mb-4
                     rotate-3
                     group-hover:rotate-0
                     transition-transform
@@ -875,14 +869,14 @@ export default function LandingPage() {
                   <Brain className="w-7 h-7 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-[#123C5C] mb-2">
-                  AI-Driven Recommendations
+                <h3 className="text-lg font-bold text-foreground mb-2 sm:text-xl">
+                  Advisory Market Insights
                 </h3>
 
-                <p className="text-[#45586B]">
-                  Get personalized enterprise opportunities,
-                  pricing guidance, and market timing suggestions
-                  powered by AI.
+                <p className="text-sm text-muted-foreground sm:text-base">
+                  Compare your asking price against verified market
+                  reference data, with optional AI explanation
+                  to help you decide.
                 </p>
 
               </CardContent>
@@ -897,29 +891,32 @@ export default function LandingPage() {
                 group
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:border-[#0F9488]
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 duration-300
-                bg-white
+                bg-card
               "
             >
 
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
 
                 <div
                   className="
-                    w-14
-                    h-14
+                    w-12
+                    h-12
+                    sm:w-14
+                    sm:h-14
                     bg-[#0F9488]
                     rounded-2xl
                     flex
                     items-center
                     justify-center
-                    mb-4
+                    mb-3
+                    sm:mb-4
                     rotate-3
                     group-hover:rotate-0
                     transition-transform
@@ -928,13 +925,12 @@ export default function LandingPage() {
                   <Shield className="w-7 h-7 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-[#123C5C] mb-2">
-                  Government Program Matching
+                <h3 className="text-lg font-bold text-foreground mb-2 sm:text-xl">
+                  Verified Market Access
                 </h3>
 
-                <p className="text-[#45586B]">
-                  Discover government support programs you
-                  qualify for through eligibility matching.
+              <p className="text-sm text-muted-foreground sm:text-base">
+                Match listings and trusted producer records to real buyer demand using verified platform data.
                 </p>
 
               </CardContent>
@@ -949,29 +945,32 @@ export default function LandingPage() {
                 group
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:border-[#8B27C7]
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 duration-300
-                bg-white
+                bg-card
               "
             >
 
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
 
                 <div
                   className="
-                    w-14
-                    h-14
+                    w-12
+                    h-12
+                    sm:w-14
+                    sm:h-14
                     bg-[#8B27C7]
                     rounded-2xl
                     flex
                     items-center
                     justify-center
-                    mb-4
+                    mb-3
+                    sm:mb-4
                     rotate-3
                     group-hover:rotate-0
                     transition-transform
@@ -980,13 +979,12 @@ export default function LandingPage() {
                   <Users className="w-7 h-7 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-[#123C5C] mb-2">
-                  Institutional Trading
+                <h3 className="text-lg font-bold text-foreground mb-2 sm:text-xl">
+                  Verified Buyer Connections
                 </h3>
 
-                <p className="text-[#45586B]">
-                  Connect directly with LGUs, DA/BFAR, and
-                  Kadiwa outlets for transparent procurement.
+              <p className="text-sm text-muted-foreground sm:text-base">
+                Connect with trusted institutional buyers using verified listings, transparent pricing, and live demand context.
                 </p>
 
               </CardContent>
@@ -1001,29 +999,32 @@ export default function LandingPage() {
                 group
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:border-[#22C55E]
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 duration-300
-                bg-white
+                bg-card
               "
             >
 
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
 
                 <div
                   className="
-                    w-14
-                    h-14
+                    w-12
+                    h-12
+                    sm:w-14
+                    sm:h-14
                     bg-[#22C55E]
                     rounded-2xl
                     flex
                     items-center
                     justify-center
-                    mb-4
+                    mb-3
+                    sm:mb-4
                     rotate-3
                     group-hover:rotate-0
                     transition-transform
@@ -1032,13 +1033,14 @@ export default function LandingPage() {
                   <TrendingUp className="w-7 h-7 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-[#123C5C] mb-2">
-                  Price & Demand Forecasting
+                <h3 className="text-lg font-bold text-foreground mb-2 sm:text-xl">
+                  Market Reference Analysis
                 </h3>
 
-                <p className="text-[#45586B]">
-                  Make informed decisions with AI-assisted
-                  pricing prompts and demand predictions.
+                <p className="text-sm text-muted-foreground sm:text-base">
+                  Review historical market reference figures and
+                  recorded buyer demand. No forecasting, and no
+                  price is set for you.
                 </p>
 
               </CardContent>
@@ -1053,29 +1055,32 @@ export default function LandingPage() {
                 group
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:border-[#0F9488]
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 duration-300
-                bg-white
+                bg-card
               "
             >
 
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
 
                 <div
                   className="
-                    w-14
-                    h-14
+                    w-12
+                    h-12
+                    sm:w-14
+                    sm:h-14
                     bg-[#0F9488]
                     rounded-2xl
                     flex
                     items-center
                     justify-center
-                    mb-4
+                    mb-3
+                    sm:mb-4
                     rotate-3
                     group-hover:rotate-0
                     transition-transform
@@ -1084,11 +1089,11 @@ export default function LandingPage() {
                   <BarChart3 className="w-7 h-7 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-[#123C5C] mb-2">
+                <h3 className="text-lg font-bold text-foreground mb-2 sm:text-xl">
                   Digital Marketplace
                 </h3>
 
-                <p className="text-[#45586B]">
+                <p className="text-sm text-muted-foreground sm:text-base">
                   List products, track orders, and manage
                   transactions in one secure platform.
                 </p>
@@ -1105,29 +1110,32 @@ export default function LandingPage() {
                 group
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:border-[#8B27C7]
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 duration-300
-                bg-white
+                bg-card
               "
             >
 
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
 
                 <div
                   className="
-                    w-14
-                    h-14
+                    w-12
+                    h-12
+                    sm:w-14
+                    sm:h-14
                     bg-[#8B27C7]
                     rounded-2xl
                     flex
                     items-center
                     justify-center
-                    mb-4
+                    mb-3
+                    sm:mb-4
                     rotate-3
                     group-hover:rotate-0
                     transition-transform
@@ -1136,13 +1144,13 @@ export default function LandingPage() {
                   <Fish className="w-7 h-7 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-[#123C5C] mb-2">
+                <h3 className="text-lg font-bold text-foreground mb-2 sm:text-xl">
                   Enterprise Profiling
                 </h3>
 
-                <p className="text-[#45586B]">
+                <p className="text-sm text-muted-foreground sm:text-base">
                   Create comprehensive profiles showcasing
-                  agricultural or fishery enterprise capabilities.
+                  agricultural enterprise capabilities.
                 </p>
 
               </CardContent>
@@ -1165,8 +1173,8 @@ export default function LandingPage() {
         className="
           relative
           overflow-hidden
-          bg-[#F5F1E5]
-          py-20
+          bg-background
+          py-16
           sm:py-24
           md:py-28
         "
@@ -1205,7 +1213,7 @@ export default function LandingPage() {
 
         <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
 
-          <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+          <div className="grid items-start gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
 
 
             {/* =====================================================
@@ -1213,7 +1221,7 @@ export default function LandingPage() {
                 FULL IMAGE — NO CONTAINER
             ===================================================== */}
 
-            <div className="relative order-2 lg:order-1">
+            <div className="relative">
 
               {/* Soft glow behind illustration */}
 
@@ -1294,7 +1302,7 @@ export default function LandingPage() {
                 RIGHT WORKFLOW
             ===================================================== */}
 
-            <div className="order-1 lg:order-2">
+            <div>
 
               {/* Section label */}
 
@@ -1313,31 +1321,33 @@ export default function LandingPage() {
 
 
               {/* Main heading */}
-
               <h2
                 className="
                   font-display
-                  text-5xl
+                  text-4xl
                   uppercase
                   leading-[0.95]
                   tracking-tight
-                  text-[#123C5C]
-                  sm:text-6xl
-                  md:text-7xl
+                  text-foreground
+                  sm:text-5xl
+                  md:text-6xl
+                  section-heading
                 "
               >
+
                 PAANO GUMAGANA?
               </h2>
 
 
               <p
                 className="
-                  mt-5
+                  mt-4
                   max-w-xl
-                  text-lg
+                  text-base
                   leading-relaxed
-                  text-[#45586B]
-                  sm:text-xl
+                  text-muted-foreground
+                  sm:mt-5
+                  sm:text-lg
                 "
               >
                 I-connect ang local producers at institutional buyers
@@ -1349,7 +1359,7 @@ export default function LandingPage() {
                   WORKFLOW STEPS
               =================================================== */}
 
-              <div className="relative mt-10">
+              <div className="relative mt-8 lg:mt-10">
 
                 {/* Vertical connecting line */}
 
@@ -1372,7 +1382,7 @@ export default function LandingPage() {
                   onMouseEnter={() => setActiveWorkflowStep(1)}
                   onFocus={() => setActiveWorkflowStep(1)}
                   onClick={() => setActiveWorkflowStep(1)}
-                  className={`workflow-step relative flex w-full cursor-pointer gap-5 pb-8 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBE24]/60 focus-visible:ring-offset-4 ${
+                  className={`workflow-step relative flex w-full cursor-pointer gap-4 pb-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBE24]/60 focus-visible:ring-offset-4 sm:gap-5 sm:pb-8 ${
                     activeWorkflowStep === 1 ? 'opacity-100' : 'opacity-85'
                   }`}
                   aria-pressed={activeWorkflowStep === 1}
@@ -1403,7 +1413,7 @@ export default function LandingPage() {
                       }
                     `}
                   >
-                    <Search className="h-5 w-5 text-[#123C5C]" />
+                    <Search className="h-5 w-5 text-foreground" />
                   </div>
 
 
@@ -1415,7 +1425,7 @@ export default function LandingPage() {
                         font-black
                         uppercase
                         leading-tight
-                        text-[#123C5C]
+                        text-foreground
                         sm:text-2xl
                       "
                     >
@@ -1431,7 +1441,7 @@ export default function LandingPage() {
                         sm:text-lg
                       "
                     >
-                      Browse verified local farmers and fisherfolk,
+                      Browse verified local farmers,
                       then check available products and prices.
                     </p>
 
@@ -1447,7 +1457,7 @@ export default function LandingPage() {
                   onMouseEnter={() => setActiveWorkflowStep(2)}
                   onFocus={() => setActiveWorkflowStep(2)}
                   onClick={() => setActiveWorkflowStep(2)}
-                  className={`workflow-step relative flex w-full cursor-pointer gap-5 pb-8 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A2B]/50 focus-visible:ring-offset-4 ${
+                  className={`workflow-step relative flex w-full cursor-pointer gap-4 pb-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A2B]/50 focus-visible:ring-offset-4 sm:gap-5 sm:pb-8 ${
                     activeWorkflowStep === 2 ? 'opacity-100' : 'opacity-85'
                   }`}
                   aria-pressed={activeWorkflowStep === 2}
@@ -1490,7 +1500,7 @@ export default function LandingPage() {
                         font-black
                         uppercase
                         leading-tight
-                        text-[#123C5C]
+                        text-foreground
                         sm:text-2xl
                       "
                     >
@@ -1565,7 +1575,7 @@ export default function LandingPage() {
                         font-black
                         uppercase
                         leading-tight
-                        text-[#123C5C]
+                        text-foreground
                         sm:text-2xl
                       "
                     >
@@ -1598,14 +1608,15 @@ export default function LandingPage() {
 
               <div
                 className="
-                  mt-10
+                  mt-8
                   rounded-2xl
                   border
-                  border-[#E7E1D0]
-                  bg-white
+                  border-border
+                  bg-card
                   p-5
                   shadow-sm
                   sm:p-6
+                  lg:mt-10
                 "
               >
 
@@ -1628,7 +1639,7 @@ export default function LandingPage() {
                         text-2xl
                         uppercase
                         leading-tight
-                        text-[#123C5C]
+                        text-foreground
                         sm:text-3xl
                       "
                     >
@@ -1680,6 +1691,17 @@ export default function LandingPage() {
 
       </section>
 
+
+      <div className="container mx-auto px-4 pb-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-[#D8D3C4] bg-[#123C5C] shadow-xl">
+          <div className="relative flex aspect-video flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#123C5C] via-[#0F6A68] to-[#315D35] px-6 text-center text-white">
+            <div aria-hidden="true" className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #FBBE24 0 2px, transparent 3px), radial-gradient(circle at 80% 75%, #fff 0 2px, transparent 3px)', backgroundSize: '48px 48px' }} />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#FBBE24] text-foreground shadow-lg"><span aria-hidden="true" className="ml-1 text-2xl">▶</span></div>
+            <p className="relative mt-5 font-display text-2xl sm:text-3xl">HarborAI Pitching Video</p>
+            <p className="relative mt-1 text-sm font-semibold text-white/85 sm:text-base">Video Coming Soon</p>
+          </div>
+        </div>
+      </div>
 
       {/* =========================================================
           BENEFITS
@@ -1769,7 +1791,7 @@ export default function LandingPage() {
               </div>
 
               <div className="text-sm font-semibold text-white/80">
-                Government Programs
+                Regional Reach
               </div>
 
             </div>
@@ -1798,11 +1820,11 @@ export default function LandingPage() {
           WHO WE SERVE
       ========================================================= */}
 
-      <section className="py-20 sm:py-24 bg-[#F5F1E5]">
+      <section className="py-16 sm:py-24 bg-background">
 
         <div className="container mx-auto px-4">
 
-          <div className="text-center mb-14 md:mb-16">
+          <div className="text-center mb-10 md:mb-14">
 
             <p
               className="
@@ -1823,14 +1845,14 @@ export default function LandingPage() {
                 text-4xl
                 sm:text-5xl
                 md:text-6xl
-                text-[#123C5C]
+                text-foreground
                 mb-4
               "
             >
               WHO WE SERVE
             </h2>
 
-            <p className="text-lg text-[#45586B] max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               A role-based platform designed for agriculture
                stakeholders.
             </p>
@@ -1838,7 +1860,7 @@ export default function LandingPage() {
           </div>
 
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-4 gap-4 min-[400px]:gap-5 lg:gap-6">
 
             {/* PRODUCERS */}
 
@@ -1847,24 +1869,26 @@ export default function LandingPage() {
                 text-center
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 overflow-hidden
-                bg-white
+                bg-card
               "
             >
 
               <div className="h-2.5 bg-[#22C55E]" />
 
-              <CardContent className="p-8">
+              <CardContent className="p-5 sm:p-6 lg:p-8">
 
                 <div
                   className="
-                    w-16
-                    h-16
+                    w-14
+                    h-14
+                    sm:w-16
+                    sm:h-16
                     bg-[#22C55E]/15
                     rounded-full
                     flex
@@ -1877,16 +1901,16 @@ export default function LandingPage() {
                   <Sprout className="w-8 h-8 text-[#22C55E]" />
                 </div>
 
-                <h3 className="text-2xl font-bold text-[#123C5C] mb-3">
+                <h3 className="text-xl font-bold text-foreground mb-3 sm:text-2xl">
                   Producers
                 </h3>
 
-                <p className="text-[#45586B] mb-4">
-                  Farmers and fishers in Aparri seeking better
+                <p className="text-sm text-muted-foreground mb-4 sm:text-base">
+                  Farmers in Aparri seeking better
                   market access and income stability.
                 </p>
 
-                <ul className="text-sm text-[#45586B] text-left space-y-2 inline-block">
+                <ul className="text-sm text-muted-foreground text-left space-y-2 inline-block">
 
                   <li className="flex items-start gap-2">
 
@@ -1917,7 +1941,7 @@ export default function LandingPage() {
                       "
                     />
 
-                    <span>Program eligibility matching</span>
+                    <span>Verified producer and listing matching</span>
 
                   </li>
 
@@ -1934,7 +1958,7 @@ export default function LandingPage() {
                       "
                     />
 
-                    <span>Direct institutional access</span>
+                    <span>Transparent market access and demand context</span>
 
                   </li>
 
@@ -1952,24 +1976,26 @@ export default function LandingPage() {
                 text-center
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 overflow-hidden
-                bg-white
+                bg-card
               "
             >
 
               <div className="h-2.5 bg-[#123C5C]" />
 
-              <CardContent className="p-8">
+              <CardContent className="p-5 sm:p-6 lg:p-8">
 
                 <div
                   className="
-                    w-16
-                    h-16
+                    w-14
+                    h-14
+                    sm:w-16
+                    sm:h-16
                     bg-[#123C5C]/10
                     rounded-full
                     flex
@@ -1979,19 +2005,18 @@ export default function LandingPage() {
                     mb-4
                   "
                 >
-                  <Users className="w-8 h-8 text-[#123C5C]" />
+                  <Users className="w-8 h-8 text-foreground" />
                 </div>
 
-                <h3 className="text-2xl font-bold text-[#123C5C] mb-3">
+                <h3 className="text-xl font-bold text-foreground mb-3 sm:text-2xl">
                   Institutional Buyers
                 </h3>
 
-                <p className="text-[#45586B] mb-4">
-                  LGUs, DA/BFAR, and Kadiwa outlets for
-                  policy-compliant procurement.
+                <p className="text-sm text-muted-foreground mb-4 sm:text-base">
+                  Trusted institutional buyers and procurement partners using verified marketplace data.
                 </p>
 
-                <ul className="text-sm text-[#45586B] text-left space-y-2 inline-block">
+                <ul className="text-sm text-muted-foreground text-left space-y-2 inline-block">
 
                   <li className="flex items-start gap-2">
 
@@ -1999,7 +2024,7 @@ export default function LandingPage() {
                       className="
                         w-4
                         h-4
-                        text-[#123C5C]
+                        text-foreground
                         mt-0.5
                         flex-shrink-0
                       "
@@ -2016,7 +2041,7 @@ export default function LandingPage() {
                       className="
                         w-4
                         h-4
-                        text-[#123C5C]
+                        text-foreground
                         mt-0.5
                         flex-shrink-0
                       "
@@ -2033,7 +2058,7 @@ export default function LandingPage() {
                       className="
                         w-4
                         h-4
-                        text-[#123C5C]
+                        text-foreground
                         mt-0.5
                         flex-shrink-0
                       "
@@ -2057,24 +2082,26 @@ export default function LandingPage() {
                 text-center
                 rounded-2xl
                 border-2
-                border-[#E7E1D0]
+                border-border
                 hover:-translate-y-1
                 shadow-sm
                 hover:shadow-lg
                 transition-all
                 overflow-hidden
-                bg-white
+                bg-card
               "
             >
 
               <div className="h-2.5 bg-[#0F9488]" />
 
-              <CardContent className="p-8">
+              <CardContent className="p-5 sm:p-6 lg:p-8">
 
                 <div
                   className="
-                    w-16
-                    h-16
+                    w-14
+                    h-14
+                    sm:w-16
+                    sm:h-16
                     bg-[#0F9488]/15
                     rounded-full
                     flex
@@ -2087,16 +2114,16 @@ export default function LandingPage() {
                   <Shield className="w-8 h-8 text-[#0F9488]" />
                 </div>
 
-                <h3 className="text-2xl font-bold text-[#123C5C] mb-3">
+                <h3 className="text-xl font-bold text-foreground mb-3 sm:text-2xl">
                   Administrators
                 </h3>
 
-                <p className="text-[#45586B] mb-4">
+                <p className="text-sm text-muted-foreground mb-4 sm:text-base">
                   DA/LGU personnel managing the platform and
                   ensuring compliance.
                 </p>
 
-                <ul className="text-sm text-[#45586B] text-left space-y-2 inline-block">
+                <ul className="text-sm text-muted-foreground text-left space-y-2 inline-block">
 
                   <li className="flex items-start gap-2">
 
@@ -2144,7 +2171,7 @@ export default function LandingPage() {
                       "
                     />
 
-                    <span>Program management</span>
+                    <span>Operational oversight</span>
 
                   </li>
 
@@ -2152,6 +2179,15 @@ export default function LandingPage() {
 
               </CardContent>
 
+            </Card>
+
+            <Card className="overflow-hidden rounded-2xl border-2 border-border bg-card text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+              <div className="h-2.5 bg-[#FBBE24]" />
+              <CardContent className="p-5 sm:p-6 lg:p-8">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FBBE24]/20 sm:h-16 sm:w-16"><Shield className="h-7 w-7 text-foreground sm:h-8 sm:w-8" /></div>
+                <h3 className="mb-3 text-xl font-bold text-foreground sm:text-2xl">Super Administrator</h3>
+                <p className="text-sm text-muted-foreground sm:text-base">System-level oversight and administration of HarborAI access and platform operations.</p>
+              </CardContent>
             </Card>
 
           </div>
@@ -2168,17 +2204,18 @@ export default function LandingPage() {
       <section
         id="about"
         className="
-          py-20
+          py-16
           sm:py-24
-          bg-white
+          bg-card
           scroll-mt-20
+          overflow-hidden
           md:scroll-mt-24
         "
       >
 
         <div className="container mx-auto px-4">
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-center">
 
             {/* TEXT */}
 
@@ -2203,8 +2240,10 @@ export default function LandingPage() {
                   text-4xl
                   sm:text-5xl
                   md:text-6xl
-                  text-[#123C5C]
-                  mb-6
+                  text-foreground
+                  mb-4
+                  sm:mb-6
+                  section-heading
                 "
               >
                 ABOUT HARBORAI
@@ -2213,25 +2252,28 @@ export default function LandingPage() {
 
               <p
                 className="
-                  text-lg
-                  text-[#45586B]
-                  mb-6
+                  text-base
+                  text-muted-foreground
+                  mb-5
                   leading-relaxed
+                  sm:mb-6
+                  sm:text-lg
                 "
               >
                 HarborAI is a comprehensive web-based decision
                 support and institutional trading platform designed
-                specifically for the agricultural and fishery sectors
+                specifically for the agricultural sector
                 in Aparri, Cagayan.
               </p>
 
 
               <p
                 className="
-                  text-lg
-                  text-[#45586B]
+                  text-base
+                  text-muted-foreground
                   mb-6
                   leading-relaxed
+                  sm:text-lg
                 "
               >
                 By combining artificial intelligence with local
@@ -2241,7 +2283,7 @@ export default function LandingPage() {
               </p>
 
 
-              <div className="space-y-4">
+              <div className="space-y-3">
 
                 <div className="flex items-start gap-3">
 
@@ -2263,11 +2305,11 @@ export default function LandingPage() {
 
                   <div>
 
-                    <h4 className="font-bold text-[#123C5C] mb-1">
+                    <h4 className="font-bold text-foreground mb-1">
                       Reduce Middleman Dependency
                     </h4>
 
-                    <p className="text-[#45586B]">
+                    <p className="text-muted-foreground">
                       Connect directly with institutional buyers.
                     </p>
 
@@ -2296,11 +2338,11 @@ export default function LandingPage() {
 
                   <div>
 
-                    <h4 className="font-bold text-[#123C5C] mb-1">
+                    <h4 className="font-bold text-foreground mb-1">
                       Improve Income Stability
                     </h4>
 
-                    <p className="text-[#45586B]">
+                    <p className="text-muted-foreground">
                       Better pricing and consistent demand.
                     </p>
 
@@ -2329,11 +2371,11 @@ export default function LandingPage() {
 
                   <div>
 
-                    <h4 className="font-bold text-[#123C5C] mb-1">
+                    <h4 className="font-bold text-foreground mb-1">
                       Policy-Aligned Trading
                     </h4>
 
-                    <p className="text-[#45586B]">
+                    <p className="text-muted-foreground">
                       Support transparent government procurement.
                     </p>
 
@@ -2351,16 +2393,16 @@ export default function LandingPage() {
             <div
               className="
                 relative
-                rotate-2
-                hover:rotate-0
+                sm:rotate-2
                 transition-transform
                 duration-300
+                sm:hover:rotate-0
               "
             >
 
               <div
                 className="
-                  bg-white
+                  bg-card
                   p-2
                   sm:p-3
                   rounded-2xl
@@ -2375,8 +2417,10 @@ export default function LandingPage() {
                   alt="Aparri agricultural landscape"
                   className="
                     w-full
-                    h-80
-                    sm:h-96
+                    h-56
+                    sm:h-72
+                    md:h-80
+                    lg:h-96
                     object-cover
                     rounded-lg
                   "
@@ -2487,8 +2531,9 @@ export default function LandingPage() {
               leading-relaxed
             "
           >
-            Join HarborAI and gain access to institutional markets,
-            AI-powered insights, and government support programs.
+            Register as a producer and await administrator approval to access institutional markets,
+            with transparent market reference insights and AI
+            interpretation to support your own pricing decisions.
           </p>
 
 
@@ -2502,7 +2547,7 @@ export default function LandingPage() {
                   font-bold
                   rounded-xl
                   bg-[#FBBE24]
-                  text-[#123C5C]
+                  text-foreground
                   hover:bg-[#F59E0B]
                   shadow-lg
                   hover:scale-105
@@ -2530,7 +2575,7 @@ export default function LandingPage() {
                   border-2
                   border-white
                   text-white
-                  hover:bg-white
+                  hover:bg-card
                   hover:text-[#4D8B35]
                   bg-transparent
                 "
@@ -2545,6 +2590,13 @@ export default function LandingPage() {
         </div>
 
       </section>
+
+
+      {/* =========================================================
+          MEET OUR DEVELOPMENT TEAM
+      ========================================================= */}
+
+      <DevelopmentTeam />
 
 
       {/* =========================================================
@@ -2568,13 +2620,9 @@ export default function LandingPage() {
               grid
               grid-cols-2
               gap-x-5
-              gap-y-6
-              md:flex
-              md:flex-row
-              md:justify-between
-              md:items-start
-              gap-10
-              md:gap-0
+              gap-y-8
+              md:grid-cols-4
+              md:gap-10
               mb-8
               text-center
               md:text-left
@@ -2590,21 +2638,27 @@ export default function LandingPage() {
                 items-center
                 md:items-start
                 col-span-2
-                mb-0
-                md:mb-0
-                md:w-1/4
+                md:col-span-1
               "
             >
 
-              <div
+              <Link
+                to="/"
                 className="
                   flex
                   items-center
                   gap-2
                   mb-4
                   justify-center
+                  rounded-lg
                   md:justify-start
+                  focus-visible:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-[#FBBE24]
+                  focus-visible:ring-offset-2
+                  focus-visible:ring-offset-[#0E2A44]
                 "
+                aria-label="HarborAI — back to home"
               >
 
                 <img
@@ -2624,11 +2678,11 @@ export default function LandingPage() {
                   HarborAI
                 </span>
 
-              </div>
+              </Link>
 
 
               <p className="text-sm max-w-xs">
-                Empowering Aparri's agricultural and fishery
+                Empowering Aparri's agricultural
                 sectors through AI-driven innovation.
               </p>
 
@@ -2642,11 +2696,11 @@ export default function LandingPage() {
                 grid
                 grid-cols-2
                 gap-5
-                md:flex
-                md:flex-row
-                md:gap-16
-                justify-center
-                md:w-3/4
+                md:col-span-3
+                md:grid-cols-3
+                md:gap-10
+                justify-items-center
+                md:justify-items-start
               "
             >
 
@@ -2656,32 +2710,23 @@ export default function LandingPage() {
 
                 <h4
                   className="
-                    font-bold
-                    text-white
-                    mb-2
-                    uppercase
-                    text-sm
-                    tracking-wide
-                  "
-                >
-                  Platform
-                </h4>
+                  font-bold
+                  text-white
+                  mb-3
+                  uppercase
+                  text-sm
+                  tracking-wide
+                "
+              >
+                Platform
+              </h4>
 
-                <ul className="space-y-2 text-sm">
-
-                  <li>
-                    <Link
-                      to="/programs"
-                      className="hover:text-[#4ADE80] transition-colors"
-                    >
-                      Programs
-                    </Link>
-                  </li>
+              <ul className="space-y-1 text-sm">
 
                   <li>
                     <a
                       href="#features"
-                      className="hover:text-[#4ADE80] transition-colors"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       Features
                     </a>
@@ -2690,7 +2735,7 @@ export default function LandingPage() {
                   <li>
                     <a
                       href="#how-it-works"
-                      className="hover:text-[#4ADE80] transition-colors"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       How It Works
                     </a>
@@ -2699,7 +2744,7 @@ export default function LandingPage() {
                   <li>
                     <a
                       href="#benefits"
-                      className="hover:text-[#4ADE80] transition-colors"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       Benefits
                     </a>
@@ -2718,7 +2763,7 @@ export default function LandingPage() {
                   className="
                     font-bold
                     text-white
-                    mb-4
+                    mb-3
                     uppercase
                     text-sm
                     tracking-wide
@@ -2727,33 +2772,33 @@ export default function LandingPage() {
                   Support
                 </h4>
 
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-1 text-sm">
 
                   <li>
-                    <a
-                      href="#"
-                      className="hover:text-[#4ADE80] transition-colors"
+                    <Link
+                      to="/help"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       Help Center
-                    </a>
+                    </Link>
                   </li>
 
                   <li>
                     <Link
                       to="/faq"
-                      className="hover:text-[#4ADE80] transition-colors"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       FAQ
                     </Link>
                   </li>
 
                   <li>
-                    <a
-                      href="#"
-                      className="hover:text-[#4ADE80] transition-colors"
+                    <Link
+                      to="/contact"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       Contact Us
-                    </a>
+                    </Link>
                   </li>
 
                 </ul>
@@ -2769,7 +2814,7 @@ export default function LandingPage() {
                   className="
                     font-bold
                     text-white
-                    mb-4
+                    mb-3
                     uppercase
                     text-sm
                     tracking-wide
@@ -2778,33 +2823,33 @@ export default function LandingPage() {
                   Legal
                 </h4>
 
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-1 text-sm">
 
                   <li>
                     <Link
                       to="/privacy"
-                      className="hover:text-[#4ADE80] transition-colors"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       Privacy Policy
                     </Link>
                   </li>
 
                   <li>
-                    <a
-                      href="#"
-                      className="hover:text-[#4ADE80] transition-colors"
+                    <Link
+                      to="/terms-and-conditions"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
-                      Terms of Service
-                    </a>
+                      Terms and Conditions
+                    </Link>
                   </li>
 
                   <li>
-                    <a
-                      href="#"
-                      className="hover:text-[#4ADE80] transition-colors"
+                    <Link
+                      to="/data-protection"
+                      className="block py-1.5 hover:text-[#4ADE80] transition-colors"
                     >
                       Data Protection
-                    </a>
+                    </Link>
                   </li>
 
                 </ul>

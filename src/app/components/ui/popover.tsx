@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -23,6 +24,7 @@ function PopoverContent({
   sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -34,7 +36,7 @@ function PopoverContent({
           className,
         )}
         {...props}
-      />
+      data-harbor-dashboard-theme={portalTheme} />
     </PopoverPrimitive.Portal>
   );
 }

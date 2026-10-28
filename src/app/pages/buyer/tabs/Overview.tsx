@@ -1,328 +1,352 @@
-  import { useEffect, useState } from 'react';
-  import { BarChart3, Users, Package, MapPin, ShieldCheck, Search } from 'lucide-react';
-  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
-  import { Badge } from '../../../components/ui/badge';
-  import { Button } from '../../../components/ui/button';
-  import { Input } from '../../../components/ui/input';
-  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-  import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DashboardText, useDashboardCopy } from '../../../i18n/DashboardCopy';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import {
+  Users,
+  TrendingUp,
+  Package,
+  AlertCircle,
+  ShoppingBag,
+  Search,
+  MapPin,
+  Sprout,
+  RefreshCw,
+} from 'lucide-react';
+import { request } from '../../../../lib/api';
+import { resolveListingImages } from '../../../../lib/image';
+import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent } from '../../../components/ui/card';
 
-  type BuyerProduct = {
-    listing_id?: number;
-    id?: number;
-    producer_id?: number;
-    product_name?: string;
-    product_category?: string;
-    category?: string;
-    current_price_per_unit?: number;
-    price_per_unit?: number;
-    unit_of_measure?: string;
-    unit?: string;
-    quantity_available?: number;
-    quantity?: number;
-    image_url?: string;
-    image_path?: string;
-    imageUrl?: string;
-    imagePath?: string;
-    producer_name?: string;
-  };
+/**
+ * Overview uses the same registered `/api/buyer/producers` response as Browse
+ * Producers. Every number shown here is derived from those records.
+ *
+ * There is no aggregate buyer-stats endpoint registered, so the dashboard
+ * deliberately avoids the invented counters and static demand chart the
+ * previous version displayed: those numbers were illustrative, not data.
+ */
+type ProducerListing = {
+  listing_id: number;
+  product_name: string;
+  product_category?: string | null;
+  category?: string | null;
+  price_per_unit: number | string | null;
+  unit?: string | null;
+  unit_of_measure?: string | null;
+  quantity_available: number | null;
+  quantity?: number | null;
+  status?: string | null;
+  location?: string | null;
+  description?: string | null;
+  producer?: { name?: string; locality?: string; location?: string } | null;
+  producer_id?: number;
+  images?: unknown;
+  image_url?: unknown;
+  image_path?: unknown;
+  raw?: any;
+};
 
-  type OverviewProps = {
-    onViewAllProducts: () => void;
-    onOrderProduct: (order: { producerId: number; listingId: number }) => void;
-  };
+type Props = {
+  onViewAllProducts: () => void;
+  onOrderProduct: (order: {
+    productId: number;
+    producerId: number;
+    listingId: number;
+    shippingAddress?: string;
+  }) => void;
+};
 
-  const resolveImageUrl = (value?: string) => {
-    if (!value) return null;
-    if (value.startsWith('http://') || value.startsWith('https://')) return value;
+export default function Overview({ onViewAllProducts, onOrderProduct }: Props) {
+  const copy = useDashboardCopy();
+  const [availableProducts, setAvailableProducts] = useState<ProducerListing[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
-    const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '').replace(/\/api$/, '');
-    const normalizedValue = value.replace(/^\/+/, '').replace(/^public\//, '');
-    const storagePath = normalizedValue.startsWith('storage/') ? normalizedValue : `storage/${normalizedValue}`;
-    return configuredApiUrl ? `${configuredApiUrl}/${storagePath}` : `/${storagePath}`;
-  };
+  /**
+   * Loads the registered buyer producer endpoint with the shared request
+   * helper so auth headers and Sanctum cookies match the rest of the app.
+   */
+  useEffect(() => {
+    const controller = new AbortController();
 
-  function ProductImage({ src, alt }: { src?: string | null; alt: string }) {
-    const [imageFailed, setImageFailed] = useState(false);
+    const load = async () => {
+      setProductsLoading(true);
+      setProductsError('');
+      try {
+        const result = await request('/api/buyer/producers', { signal: controller.signal });
+        const rows: ProducerListing[] = Array.isArray(result?.data) ? result.data : [];
 
-    useEffect(() => {
-      setImageFailed(false);
-    }, [src]);
-
-    if (src && !imageFailed) {
-      return (
-        <img
-          src={src}
-          alt={alt}
-          className="aspect-[4/3] w-full object-cover"
-          onError={() => setImageFailed(true)}
-        />
-      );
-    }
-
-    return (
-      <div className="flex aspect-[4/3] w-full items-center justify-center bg-[#0F9488]/10 text-[#0F9488]" aria-label="No product image">
-        <Package className="h-12 w-12" aria-hidden="true" />
-      </div>
-    );
-  }
-
-  export default function Overview({ onViewAllProducts, onOrderProduct }: OverviewProps) {
-    const [availableProducts, setAvailableProducts] = useState<BuyerProduct[]>([]);
-    const [productsLoading, setProductsLoading] = useState(true);
-    const [productSearch, setProductSearch] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('all');
-
-    useEffect(() => {
-      const loadAvailableProducts = async () => {
-        try {
-          const response = await fetch('/api/buyer/producers', {
-            headers: { Accept: 'application/json' },
-            credentials: 'include',
-          });
-          if (!response.ok) throw new Error('Unable to load products');
-
-          const result = await response.json();
-          const products = (Array.isArray(result.data) ? result.data : []).flatMap((producer: any) =>
-            (Array.isArray(producer.product_listings) ? producer.product_listings : []).map((listing: any) => ({
+        const listings = rows.flatMap((producer: any) =>
+          (Array.isArray(producer?.product_listings) ? producer.product_listings : []).map(
+            (listing: any) => ({
               ...listing,
-              producer_id: Number(producer.id ?? producer.producer_id ?? 0),
-              producer_name: producer.name,
-              producer_location: producer.location,
-            })),
-          );
-          setAvailableProducts(products.filter((product: BuyerProduct) => Number(product.quantity_available ?? product.quantity ?? 0) > 0));
-        } catch (error) {
-          console.error('Unable to load available products', error);
-          setAvailableProducts([]);
-        } finally {
-          setProductsLoading(false);
-        }
-      };
+              producer: { name: producer?.name, locality: producer?.locality ?? producer?.location },
+              producer_id: producer?.id ?? producer?.producer_id,
+              producer_verified: producer?.verified,
+              raw: producer,
+            }),
+          ),
+        );
 
-      loadAvailableProducts();
-    }, []);
+        const inStock = listings.filter((listing) =>
+          ['active', 'available'].includes(String(listing.status ?? '').toLowerCase()) &&
+          Number(listing.quantity_available ?? listing.quantity ?? 0) > 0,
+        );
 
-    const categories = Array.from(
-      new Set(
-        availableProducts
-          .map((product) => product.product_category || product.category || 'General')
-          .filter(Boolean),
-      ),
-    ).sort();
+        setAvailableProducts(inStock);
+      } catch (error: any) {
+        if ((error as Error)?.name === 'AbortError' || controller.signal.aborted) return;
+        setProductsError(error?.message || 'Unable to load available products right now.');
+        setAvailableProducts([]);
+      } finally {
+        if (!controller.signal.aborted) setProductsLoading(false);
+      }
+    };
 
-    const normalizedSearch = productSearch.trim().toLowerCase();
-    const filteredProducts = availableProducts.filter((product) => {
-      const category = product.product_category || product.category || 'General';
-      const matchesSearch = [product.product_name, category, product.producer_name]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(normalizedSearch));
-      const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
-      return matchesSearch && matchesCategory;
+    void load();
+    return () => controller.abort();
+  }, []);
+
+  const products = availableProducts;
+
+  const filteredProducts = useMemo(() => {
+    const needle = searchTerm.trim().toLowerCase();
+    if (!needle) return products;
+    return products.filter((p) =>
+      [p.product_name, p.product_category, p.category, p.producer?.name, p.location]
+        .some((value) => String(value ?? '').toLowerCase().includes(needle)),
+    );
+  }, [products, searchTerm]);
+
+  /**
+   * Derived counts replace the previous hardcoded statistic cards, so the
+   * numbers always describe the same records the marketplace list is read from.
+   */
+  const metricSummary = useMemo(() => {
+    const categories = new Set(
+      products.map((p) => p.product_category ?? p.category ?? '').filter(Boolean),
+    );
+    const locations = new Set(
+      products.map((p) => p.producer?.locality ?? p.producer?.location ?? p.location ?? '').filter(Boolean),
+    );
+
+    return {
+      availableProducts: products.length,
+      localProducers: new Set(products.map((p) => p.producer_id).filter(Boolean)).size,
+      categories: categories.size,
+      locations: locations.size,
+    };
+  }, [products]);
+
+  const handleOrder = (p: ProducerListing & { producer_verified?: boolean }) => {
+    onOrderProduct({
+      productId: p.producer_id ?? 0,
+      producerId: p.producer_id ?? 0,
+      listingId: p.listing_id,
+      shippingAddress: undefined,
     });
+  };
 
-    const summaryStats = [
-      { label: 'Active Buyer Requests', value: '18', icon: Users, iconBg: 'bg-[#123C5C]/10', iconColor: 'text-[#123C5C]' },
-      { label: 'Pending Orders', value: '7', icon: Package, iconBg: 'bg-[#F59E0B]/15', iconColor: 'text-[#F59E0B]' },
-      { label: 'Completed Transactions', value: '24', icon: ShieldCheck, iconBg: 'bg-[#22C55E]/15', iconColor: 'text-[#22C55E]' },
-      { label: 'Available Producers', value: '92', icon: MapPin, iconBg: 'bg-[#0F9488]/15', iconColor: 'text-[#0F9488]' },
-    ];
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+  };
 
-    const demandTrend = [
-      { month: 'Jul', demand: 8200, supply: 7600 },
-      { month: 'Aug', demand: 8600, supply: 7800 },
-      { month: 'Sep', demand: 9000, supply: 8100 },
-      { month: 'Oct', demand: 9400, supply: 8700 },
-      { month: 'Nov', demand: 9800, supply: 9200 },
-    ];
+  const summaryCards = [
+    ['Available products', metricSummary.availableProducts, Package],
+    ['Active producers', metricSummary.localProducers, Users],
+    ['Categories offered', metricSummary.categories, Sprout],
+    ['Localities covered', metricSummary.locations, MapPin],
+  ] as const;
 
-    const buyerRequests = [
-      { id: 'REQ-2026-01', product: 'Organic Rice', quantity: '1,500 kg', status: 'Open' },
-      { id: 'REQ-2026-02', product: 'Fresh Tilapia', quantity: '700 kg', status: 'Matching' },
-      { id: 'REQ-2026-03', product: 'Vegetables', quantity: '1,200 kg', status: 'Open' },
-    ];
+  return (
+    <div className="min-h-full space-y-6 overflow-x-hidden bg-[#F8F8F5] px-4 py-8 md:px-8 lg:px-12">
 
-    const supplierSummary = [
-      { label: 'Producers Ready to Supply', value: '48' },
-      { label: 'Verified Producers', value: '32' },
-      { label: 'Priority Suppliers', value: '14' },
-    ];
-
-    return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl text-[#123C5C] tracking-tight">Summary Dashboard</h1>
-          <p className="text-[#45586B] mt-1">Pangkalahatang view ng buyer requests, transactions, market demand, at availability ng producers.</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-          {summaryStats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.label} className="border border-[#E7E1D0] hover:shadow-md transition-shadow duration-300">
-                <CardContent className="min-w-0 p-3 sm:p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl ${stat.iconBg} flex items-center justify-center`}>
-                      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.iconColor}`} />
+      <div className="mx-auto max-w-[1440px] space-y-6">
+        {/* Summary metrics */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">
+          {summaryCards.map(([label, value, Icon]) => (
+            <Card key={copy(label)} className="border-border bg-card shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs tracking-[0.08em] text-muted-foreground sm:text-sm">{copy(label)}</p>
+                    <div className="mt-1.5 text-2xl font-black text-foreground sm:text-3xl">
+                      {metricSummary.availableProducts > 0 ? value : 0}
                     </div>
-                    <Badge className="bg-[#123C5C]/10 text-[#123C5C]">{stat.label}</Badge>
                   </div>
-                  <div className="truncate text-xl font-bold text-[#123C5C] sm:text-3xl">{stat.value}</div>
-                </CardContent>
-              </Card>
-            );
-          })}
+
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E3F4ED] text-[#158C64]">
+                    <Icon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        <Card className="overflow-hidden border-[#E7E1D0] bg-white shadow-sm">
-          <CardHeader className="border-b border-[#E7E1D0]/70 bg-[#F5F1E5]/45">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <CardTitle className="font-display text-2xl text-[#123C5C]">Available Products</CardTitle>
-                <CardDescription className="mt-2">Browse products currently available from verified producers.</CardDescription>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+          <Card className="min-w-0 overflow-hidden border-border bg-card shadow-sm">
+            <div className="p-5 sm:p-7">
+
+              <h2 className="font-display text-2xl text-foreground sm:text-3xl"><DashboardText text="Welcome to HarborAI" /></h2>
+
+              <p className="mt-2 max-w-2xl text-base text-muted-foreground sm:text-lg"><DashboardText text="Discover local agricultural products from Aparri producers, negotiate directly with them, and manage your institution's supply needs." /></p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <Button
+                  onClick={() => {
+                    if (products.length > 0) handleOrder(products[0]);
+                    else onViewAllProducts();
+                  }}
+                  className="min-h-11 justify-start rounded-lg bg-[#123C5C] px-4 font-bold hover:bg-[#0d2e47]"
+                >
+                  <ShoppingBag className="mr-2 h-5 w-5" aria-hidden="true" /><DashboardText text="Start Negotiation" /></Button>
+
+                <Button
+                  variant="outline"
+                  onClick={onViewAllProducts}
+                  className="min-h-11 justify-start rounded-lg px-4 font-bold"
+                >
+                  <Search className="mr-2 h-5 w-5" aria-hidden="true" /><DashboardText text="Browse All Products" /></Button>
               </div>
-              <Button type="button" variant="outline" onClick={onViewAllProducts} className="w-full border-[#0F9488] text-[#0F9488] hover:bg-[#0F9488]/10 lg:w-auto">
-                View All Products
-              </Button>
             </div>
-            <div className="grid gap-3 pt-2 md:grid-cols-[minmax(0,1fr)_220px]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#45586B]" aria-hidden="true" />
-                <Input
-                  value={productSearch}
-                  onChange={(event) => setProductSearch(event.target.value)}
-                  placeholder="Search products..."
-                  aria-label="Search products"
-                  className="border-[#E7E1D0] bg-white pl-9 text-[#123C5C] focus-visible:ring-[#22C55E]"
-                />
+          </Card>
+
+          {/* Data provenance notice: replaces the previous static demand chart */}
+          <Card className="min-w-0 border-border bg-card shadow-sm">
+            <CardContent className="space-y-4 p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#FDF0D7] text-[#B8202B]">
+                  <TrendingUp className="h-5 w-5" aria-hidden="true" />
+                </div>
+
+                <div>
+                  <h3 className="font-display text-lg text-foreground sm:text-xl"><DashboardText text="How these numbers are produced" /></h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground"><DashboardText text="The stats above come from your" /><strong><DashboardText text="active producer marketplace" /></strong><DashboardText text=": available products, active producers, categories covered, and localities represented." /></p>
+                </div>
               </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="border-[#E7E1D0] bg-white text-[#123C5C] focus:ring-[#22C55E]">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+              <div className="rounded-lg bg-[#F8F7F1] p-4">
+                <p className="text-xs font-semibold text-muted-foreground sm:text-sm"><DashboardText text="HarborAI shows marketplace records only. It does not publish a statistical forecast of institutional demand or a guaranteed market price, and historic values are not treated as a live price." /></p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Product list */}
+        <Card className="border-border bg-card shadow-sm">
+          <div className="p-5 sm:p-6">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-display text-lg font-bold text-foreground sm:text-xl"><DashboardText text="Recently Listed Products" /></h3>
+              <Badge className="rounded-full border-[#CBE6D1] bg-[#E3F4ED] px-3 py-1 text-[#158C64]">
+                {filteredProducts.length} {filteredProducts.length === 1 ? copy("result") : copy("results")}
+              </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
+
+            <form onSubmit={handleSearch} className="relative mb-5">
+              <Search
+                className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                type="search"
+                placeholder={copy("Maghanap ng produkto, kategorya, o lokasyon...")}
+                aria-label={copy("Hanapin ang produkto, kategorya, o lokasyon")}
+                className="h-11 min-h-11 w-full rounded-lg border border-[#DCD8D2] bg-card pl-10 pr-3 text-sm text-foreground outline-none placeholder:text-[#9AA0A6] focus-visible:border-[#123C5C] focus-visible:ring-[3px] focus-visible:ring-[#123C5C]/25"
+              />
+            </form>
+
             {productsLoading ? (
-              <p className="text-sm text-[#45586B]">Nilo-load ang mga produkto...</p>
-            ) : availableProducts.length === 0 ? (
-              <p className="text-sm text-[#45586B]">Wala pang available na produkto.</p>
+              <p className="p-6 text-center text-muted-foreground"><DashboardText text="Nilo-load ang available products..." /></p>
+            ) : productsError ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <p role="alert" className="flex items-center gap-2 text-sm text-red-700">
+                  <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                  {productsError}
+                </p>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" /><DashboardText text="Subukan muli" /></Button>
+              </div>
             ) : filteredProducts.length === 0 ? (
-              <p className="py-8 text-center text-sm text-[#45586B]">No products found.</p>
+              <div className="p-6 text-center text-muted-foreground sm:p-10">
+                <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-[#9AA0A6]" aria-hidden="true" /><DashboardText text="Walang nakitang available products." /></div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
-                {filteredProducts.slice(0, 6).map((product, index) => {
-                  const category = product.product_category || product.category || 'General';
-                  const unit = product.unit_of_measure || product.unit || 'kg';
-                  const price = Number(product.current_price_per_unit ?? product.price_per_unit ?? 0);
-                  const quantity = product.quantity_available ?? product.quantity ?? 0;
-                  const listingId = Number(product.listing_id ?? product.id ?? 0);
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+                {filteredProducts.slice(0, 8).map((product) => {
+                  const images = resolveListingImages(product);
+                  const price = Number(product.price_per_unit ?? 0);
+                  const unit = product.unit ?? product.unit_of_measure ?? 'unit';
+                  const quantity = Number(product.quantity_available ?? product.quantity ?? 0);
 
                   return (
-                    <article key={`${listingId}-${index}`} className="overflow-hidden rounded-xl border border-[#E7E1D0] bg-white shadow-sm transition-shadow hover:shadow-md">
-                      <ProductImage src={resolveImageUrl(product.image_url || product.image_path || product.imageUrl || product.imagePath)} alt={product.product_name || 'Available product'} />
-                      <div className="space-y-3 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="truncate font-bold text-[#123C5C]">{product.product_name || 'Unnamed Product'}</h3>
-                            <p className="mt-1 text-sm text-[#45586B]">{category}</p>
+                    <article
+                      key={product.listing_id}
+                      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <div className="aspect-[4/3] overflow-hidden bg-[#EAF4EF]">
+                        {images[0]?.url ? (
+                          <ImageWithFallback
+                            key={images[0].url}
+                            src={images[0].url}
+                            alt={product.product_name}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[#158C64]">
+                            <Sprout className="h-9 w-9" aria-hidden="true" />
                           </div>
-                          <Badge className="shrink-0 bg-[#22C55E]/15 text-[#0B4842]">Available</Badge>
+                        )}
+                      </div>
+
+                      <div className="flex flex-1 flex-col p-3">
+                        <h4 className="line-clamp-2 min-h-10 font-bold text-foreground">
+                          {product.product_name || product.category || copy("Product")}
+                        </h4>
+
+                        <p className="mt-1 font-black text-[#158C64]">
+                          ₱{price.toLocaleString()}{' '}
+                          <span className="text-xs font-medium text-muted-foreground">/ {unit}</span>
+                        </p>
+
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {quantity.toLocaleString()} {unit}{' '}<DashboardText text="available" /></p>
+
+                        <p className="mt-1 flex items-center gap-1 truncate text-xs font-semibold text-foreground">
+                          {product.producer?.name || copy("Producer")}
+                        </p>
+
+                        <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                          <MapPin size={13} aria-hidden="true" />
+                          {product.producer?.locality ?? product.producer?.location ?? product.location ?? copy("Location not specified")}
+                        </p>
+
+                        <div className="mt-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => handleOrder(product)}
+                            className="min-h-11 w-full border-[#158C64] font-bold text-[#158C64] hover:bg-[#E3F4ED]"
+                          ><DashboardText text="Contact & Negotiate" /></Button>
                         </div>
-                        <div className="space-y-1 text-sm text-[#45586B]">
-                          <p><span className="font-semibold text-[#123C5C]">Price:</span> ₱{price.toLocaleString()} / {unit}</p>
-                          <p><span className="font-semibold text-[#123C5C]">Available:</span> {quantity} {unit}</p>
-                          <p className="truncate"><span className="font-semibold text-[#123C5C]">Producer:</span> {product.producer_name || 'Verified Producer'}</p>
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={() => onOrderProduct({ producerId: Number(product.producer_id ?? 0), listingId })}
-                          className="w-full bg-[#0F9488] text-white hover:bg-[#0B7F74]"
-                        >
-                          Mag-order
-                        </Button>
                       </div>
                     </article>
                   );
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Market Demand Overview</CardTitle>
-              <CardDescription>Mga trend ng demand at supply mula July hanggang November</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={demandTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E7E1D0" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="demand" stroke="#123C5C" name="Demand" strokeWidth={2} />
-                  <Line type="monotone" dataKey="supply" stroke="#22C55E" name="Supply" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Supplier Availability</CardTitle>
-                <CardDescription>Verified producers at active supply partners</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {supplierSummary.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between">
-                    <span className="text-sm text-[#45586B]">{item.label}</span>
-                    <span className="font-semibold text-[#123C5C]">{item.value}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#0F9488]/5 border-[#0F9488]/30">
-              <CardContent>
-                <div className="flex items-center gap-3 mb-3">
-                  <ShieldCheck className="w-5 h-5 text-[#0F9488]" />
-                  <h3 className="font-semibold text-[#123C5C]">Gabay para sa Buyer</h3>
-                </div>
-                <p className="text-sm text-[#0B4842]">Subaybayan sa isang lugar ang buyer demand, pending orders, at supplier capacity para makatulong sa napapanahong buyer-producer matches.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Buyer Requests</CardTitle>
-            <CardDescription>Kasalukuyang institutional demand postings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {buyerRequests.map((request) => (
-              <div key={request.id} className="flex items-center justify-between p-4 border border-[#E7E1D0] rounded-xl">
-                <div>
-                  <div className="font-semibold text-[#123C5C]">{request.product}</div>
-                  <div className="text-sm text-[#45586B]">{request.id} • {request.quantity}</div>
-                </div>
-                <Badge className="bg-[#0F9488]/15 text-[#0B4842]">{request.status}</Badge>
+            {!productsLoading && !productsError && filteredProducts.length > 8 && (
+              <div className="mt-4">
+                <Button variant="ghost" onClick={onViewAllProducts} className="min-h-11 w-full"><DashboardText text="View all products in Browse Products" /></Button>
               </div>
-            ))}
-          </CardContent>
+            )}
+          </div>
         </Card>
-
       </div>
-    );
-  }
+    </div>
+  );
+}

@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -32,6 +33,7 @@ function AlertDialogOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
@@ -40,7 +42,7 @@ function AlertDialogOverlay({
         className,
       )}
       {...props}
-    />
+    data-harbor-dashboard-theme={portalTheme} />
   );
 }
 
@@ -48,6 +50,7 @@ function AlertDialogContent({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
@@ -58,7 +61,7 @@ function AlertDialogContent({
           className,
         )}
         {...props}
-      />
+      data-harbor-dashboard-theme={portalTheme} />
     </AlertDialogPortal>
   );
 }

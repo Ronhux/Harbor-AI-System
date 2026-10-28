@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -71,6 +72,7 @@ function MenubarContent({
   sideOffset = 8,
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Content>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <MenubarPortal>
       <MenubarPrimitive.Content
@@ -83,7 +85,7 @@ function MenubarContent({
           className,
         )}
         {...props}
-      />
+      data-harbor-dashboard-theme={portalTheme} />
     </MenubarPortal>
   );
 }
@@ -244,6 +246,7 @@ function MenubarSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.SubContent>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <MenubarPrimitive.SubContent
       data-slot="menubar-sub-content"
@@ -252,7 +255,7 @@ function MenubarSubContent({
         className,
       )}
       {...props}
-    />
+    data-harbor-dashboard-theme={portalTheme} />
   );
 }
 

@@ -14,12 +14,12 @@ return new class extends Migration
                 if (!Schema::hasColumn('orders', 'fulfillment_status')) {
                     $table->string('fulfillment_status')->default('Processing')->after('status');
                 }
-                
+
                 // Add payment_status if it doesn't exist
                 if (!Schema::hasColumn('orders', 'payment_status')) {
                     $table->string('payment_status')->default('Pending')->after('fulfillment_status');
                 }
-                
+
                 // Add shipping_address if it doesn't exist
                 if (!Schema::hasColumn('orders', 'shipping_address')) {
                     $table->text('shipping_address')->nullable()->after('delivery_date');

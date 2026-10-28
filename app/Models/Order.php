@@ -17,7 +17,9 @@ class Order extends Model
 
     protected $fillable = [
         'buyer_id',
+        'negotiation_id',
         'order_date',
+        'delivery_date',
         'total_amount',
         'shipping_address',
         'fulfillment_status',
@@ -74,5 +76,10 @@ class Order extends Model
             'order_id',
             'order_id'
         );
+    }
+
+    public function negotiation()
+    {
+        return $this->belongsTo(Negotiation::class, 'negotiation_id');
     }
 }

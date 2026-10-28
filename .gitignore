@@ -22,3 +22,24 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+/storage/*.dpapi
+
+# Local credentials and diagnostic outputs are excluded from publication.
+/storage/logs/**
+/storage/app/**
+*.dpapi
+.env.*
+!.env.example
+/fca-mariadb-results.xml
+
+# Publication privacy exclusions, including artifacts already tracked must also be reviewed.
+/storage/**
+!/storage/.gitignore
+/database/*.sqlite*
+*.sql
+*.key
+*.pem
+/docs/phase*-*
+/docs/PHASE*_*.md
+/.github/workflows/

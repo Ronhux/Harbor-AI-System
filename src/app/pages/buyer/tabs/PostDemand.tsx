@@ -1,268 +1,65 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { FileText, Plus, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
+import { DemandSubmissionRetry } from '../../../../lib/DemandSubmissionRetry';
+import { DashboardText, useDashboardCopy } from '../../../i18n/DashboardCopy';
+import { LatestRequest } from '../../../../lib/LatestRequest';
+import { useLanguage } from '../../../i18n/useLanguage';
+import { useNotificationRecord } from '../../../contracts/useNotificationRecord';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import DemandDraftPreview from '../../../components/mao/DemandDraftPreview';
+import { INSTITUTIONAL_BUYER_PREVIEW_ENABLED, InstitutionalBuyerPreview } from '../../../components/mao/InstitutionalDemandPreviews';
+import { MAO_DEMAND_PREVIEW_ENABLED } from '../../../contracts/maoWorkflows';
+import { AlertCircle, Calendar, CheckCircle2, FileText, Plus, Search, X } from 'lucide-react';
+import { request } from '../../../../lib/api';
+import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
+import FeedbackModal from '../../../components/ui/feedback-modal';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Badge } from '../../../components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
 
-export default function PostDemand() {
-  type Demand = {
-    id: number;
-    product: string;
-    quantity: string;
-    deadline: string;
-    matches: number;
-    status: string;
-  };
+type Demand={id:number;product_name:string;category?:string;quantity_needed:number;unit:string;max_price_per_unit?:number;description?:string;location?:string;deadline:string;preferred_delivery_date?:string;quality_requirements?:string;special_requirements?:string;partial_fulfillment?:boolean;status:string; review_status?:string; review_reason?:string;offer_count?:number};
+type Offer={id:number;producer_name:string;listing_name?:string;quantity_offered:number;proposed_price:number;availability_date?:string;delivery_terms?:string;quality_grade?:string;notes?:string;status:string};
+type Props={onNegotiationStarted?:()=>void};
+const blank={product_name:'',category:'',quantity_needed:'',unit:'kg',max_price_per_unit:'',deadline:'',preferred_delivery_date:'',location:'',quality_requirements:'',special_requirements:'',partial_fulfillment:false};
 
-  const [selectedDemand, setSelectedDemand] = useState<Demand | null>(null);
-  const [postedDemands, setPostedDemands] = useState<Demand[]>([]);
-  const [product, setProduct] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [budget, setBudget] = useState('');
-  const [requirements, setRequirements] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  const loadDemands = async () => {
-    try {
-      const { request } = await import('../../../../lib/api');
-      const response = await request('/api/buyer/demands');
-      setPostedDemands((response.data || []).map((demand: any) => ({
-        id: demand.id,
-        product: demand.product_name,
-        quantity: `${demand.quantity_needed} ${demand.unit}`,
-        deadline: demand.deadline,
-        matches: demand.demand_details_count || 0,
-        status: demand.status,
-      })));
-    } catch (err: any) {
-      setError(err.message || 'Hindi ma-load ang demand notices.');
-    }
-  };
-
-  useEffect(() => {
-    loadDemands();
-  }, []);
-
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError('');
-
-    if (!product || !quantity || !unit || !deadline) {
-      setError('Kumpletuhin ang product, quantity, unit, at deadline fields.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const { request } = await import('../../../../lib/api');
-      await request('/api/buyer/demands', {
-        method: 'POST',
-        body: {
-          product_name: product,
-          category: product,
-          quantity_needed: Number(quantity),
-          unit,
-          max_price_per_unit: budget ? Number(budget) : null,
-          description: requirements || null,
-          deadline,
-        },
-      });
-      setProduct('');
-      setQuantity('');
-      setUnit('');
-      setDeadline('');
-      setBudget('');
-      setRequirements('');
-      await loadDemands();
-    } catch (err: any) {
-      setError(err.message || 'Hindi ma-post ang demand notice.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl text-[#123C5C] tracking-tight">Mag-post ng Demand Notice</h1>
-        <p className="text-[#45586B] mt-1">Gumawa ng demand postings at makatanggap ng matches mula sa producers</p>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Post Form */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Bagong Demand Notice</CardTitle>
-            <CardDescription>Punan ang detalye ng iyong institutional demand</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="product">Uri ng Produkto</Label>
-                <Select value={product} onValueChange={setProduct}>
-                  <SelectTrigger id="product">
-                    <SelectValue placeholder="Pumili ng produkto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rice">Rice</SelectItem>
-                    <SelectItem value="corn">Corn</SelectItem>
-                    <SelectItem value="fish">Fresh Fish</SelectItem>
-                    <SelectItem value="vegetables">Vegetables</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="quantity">Kailangang Quantity</Label>
-                <Input id="quantity" type="number" min="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder="e.g., 2000" />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="unit">Unit</Label>
-                <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger id="unit">
-                    <SelectValue placeholder="Pumili ng unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="kg">Kilogram (kg)</SelectItem>
-                    <SelectItem value="sack">Sack</SelectItem>
-                    <SelectItem value="piece">Piece</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="deadline">Deadline</Label>
-                <Input id="deadline" type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="budget">Budget Range (Optional)</Label>
-              <Input id="budget" type="number" min="0" value={budget} onChange={(event) => setBudget(event.target.value)} placeholder="Pinakamataas na presyo bawat unit" />
-            </div>
-
-            <div>
-              <Label htmlFor="requirements">Mga Special Requirement</Label>
-              <Textarea 
-                id="requirements" 
-                placeholder="Quality standards, certifications, delivery preferences..."
-                rows={3}
-                value={requirements}
-                onChange={(event) => setRequirements(event.target.value)}
-              />
-            </div>
-
-            {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
-
-            <Button type="submit" disabled={isSubmitting} className="w-full rounded-full font-bold bg-[#22C55E] hover:bg-[#15803D]">
-              <Plus className="w-4 h-4 mr-2" />
-              {isSubmitting ? 'Nino-post...' : 'Mag-post ng Demand Notice'}
-            </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Posted Demands */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Iyong Na-post na Demands</CardTitle>
-            <CardDescription>Mga active demand posting</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {postedDemands.map((demand) => (
-                <div key={demand.id} className="p-3 border border-[#E7E1D0] rounded-xl">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-bold text-[#123C5C]">{demand.product}</h4>
-                    <Badge className="bg-[#22C55E]">{demand.status}</Badge>
-                  </div>
-                  <div className="text-sm text-[#45586B] space-y-1 mb-3">
-                    <div>Quantity: {demand.quantity}</div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>Due: {demand.deadline}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-[#0F9488]">{demand.matches} matches</span>
-                    <Button size="sm" variant="outline" onClick={() => setSelectedDemand(demand)}>Tingnan</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Demand Details Dialog */}
-      <Dialog open={!!selectedDemand} onOpenChange={() => setSelectedDemand(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Detalye ng Demand</DialogTitle>
-            <DialogDescription>Demand notice para sa {selectedDemand?.product}</DialogDescription>
-          </DialogHeader>
-          {selectedDemand && (
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-[#45586B]">Product:</span>
-                  <span className="font-bold text-[#123C5C]">{selectedDemand.product}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#45586B]">Quantity:</span>
-                  <span className="font-bold text-[#123C5C]">{selectedDemand.quantity}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#45586B]">Deadline:</span>
-                  <span className="font-bold text-[#123C5C]">{selectedDemand.deadline}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#45586B]">Status:</span>
-                  <Badge className="bg-[#22C55E]">{selectedDemand.status}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#45586B]">Matches Found:</span>
-                  <span className="font-bold text-[#0F9488]">{selectedDemand.matches} producers</span>
-                </div>
-              </div>
-              <div className="pt-4 border-t border-[#E7E1D0]">
-                <h4 className="font-bold text-[#123C5C] mb-3">Matched Producers</h4>
-                <div className="space-y-2">
-                  {/* Mock matched producers */}
-                  <div className="p-3 bg-[#F5F1E5] rounded-xl">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-[#123C5C]">Juan Dela Cruz</p>
-                        <p className="text-sm text-[#45586B]">Brgy. Centro • Rice Farmer</p>
-                      </div>
-                      <Button size="sm" variant="outline">Contact</Button>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#F5F1E5] rounded-xl">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-[#123C5C]">Maria Santos</p>
-                        <p className="text-sm text-[#45586B]">Brgy. Macanaya • Farmer</p>
-                      </div>
-                      <Button size="sm" variant="outline">Contact</Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+export default function PostDemand({onNegotiationStarted}:Props){
+  const copy = useDashboardCopy();
+  const {t}=useLanguage();
+  const reviewLabel=(status?:string)=>{const key:Record<string,string>={'Pending Review':'pending',Approved:'approved',Rejected:'rejected','Legacy Unreviewed':'legacy'};return key[status||'Legacy Unreviewed']?t('demandWorkflow.'+key[status||'Legacy Unreviewed']):status};
+  const retry=useRef(new DemandSubmissionRetry());
+  const [retryAvailable,setRetryAvailable]=useState<boolean|null>(null);
+  const latest=useRef(new LatestRequest());
+  useEffect(()=>()=>latest.current.invalidate(),[]);
+  const [demands,setDemands]=useState<Demand[]>([]);const [form,setForm]=useState<any>(blank);const [editing,setEditing]=useState<number|null>(null);const [offersFor,setOffersFor]=useState<Demand|null>(null);const [offers,setOffers]=useState<Offer[]>([]);const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [message,setMessage]=useState('');const [demandPosted,setDemandPosted]=useState(false);const [submitFailure,setSubmitFailure]=useState('');const [postedName,setPostedName]=useState('');const submitting=useRef(false);const requestsRef=useRef<HTMLElement|null>(null);
+  const load=async()=>{const current=latest.current.begin();setLoading(true);setError('');try{const r=await request('/api/buyer/demands');if(!current())return;setRetryAvailable(r.submission_idempotency_available===true);setDemands(r.data||[])}catch(e:any){if(current())setError(e.message||'Could not load demand requests.')}finally{if(current())setLoading(false)}};
+  useEffect(()=>{void load();const refresh=()=>{if(document.visibilityState==='visible'&&!submitting.current)void load()};const timer=window.setInterval(refresh,45000);window.addEventListener('focus',refresh);return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh)}},[]);
+  useNotificationRecord('demand',!loading&&!error,id=>{document.getElementById('buyer-demand-'+id)?.scrollIntoView({behavior:'smooth',block:'center'})});
+  const reset=()=>{setForm(blank);setEditing(null)};
+  const submit=async(e:FormEvent)=>{e.preventDefault();if(busy||submitting.current)return;if(!editing&&retryAvailable===null){setSubmitFailure(copy('Reload your demand requests before submitting.'));return;}submitting.current=true;setBusy(true);setError('');setMessage('');setSubmitFailure('');setDemandPosted(false);try{const payload={...form,quantity_needed:Number(form.quantity_needed),max_price_per_unit:form.max_price_per_unit?Number(form.max_price_per_unit):null,preferred_delivery_date:form.preferred_delivery_date||null};const account=localStorage.getItem('userId')||'current-buyer';const headers=!editing&&retryAvailable?{'Idempotency-Key':await retry.current.keyFor(account,payload)}:undefined;const result=editing?await request(`/api/buyer/demands/${editing}`,{method:'PUT',body:payload}):await request('/api/buyer/demands',{method:'POST',body:payload,headers});if(!result?.data)throw new Error('The server did not confirm the demand was saved.');if(!editing&&retryAvailable)retry.current.complete(account);if(!editing&&result?.data)setDemands(current=>[result.data,...current.filter(d=>d.id!==result.data.id)]);if(editing){setMessage('Demand request updated.');reset();await load()}else{setPostedName(String(form.product_name||''));setDemandPosted(true);reset();await load()}}catch(e:any){const details=Object.values(e.errors||{}).flat().join(' ');setError('');setSubmitFailure(details||e.message||'Could not submit the demand. Please review the form and try again.')}finally{submitting.current=false;setBusy(false)}};
+  const edit=(d:Demand)=>{setEditing(d.id);setForm({product_name:d.product_name,category:d.category||'',quantity_needed:String(d.quantity_needed),unit:d.unit,max_price_per_unit:String(d.max_price_per_unit??''),deadline:d.deadline,preferred_delivery_date:d.preferred_delivery_date||'',location:d.location||'',quality_requirements:d.quality_requirements||'',special_requirements:d.special_requirements||d.description||'',partial_fulfillment:Boolean(d.partial_fulfillment)});window.scrollTo({top:0,behavior:'smooth'})};
+  const cancel=async(d:Demand)=>{if(!window.confirm(`Cancel the ${d.product_name} request?`))return;setBusy(true);setError('');try{await request(`/api/buyer/demands/${d.id}/cancel`,{method:'POST'});await load()}catch(e:any){setError(e.message||'Could not cancel this request.')}finally{setBusy(false)}};
+  const loadOffers=async(d:Demand)=>{setOffersFor(d);setOffers([]);setError('');try{const r=await request(`/api/buyer/demands/${d.id}/offers`);setOffers(r.data||[])}catch(e:any){setError(e.message||'Could not load supply offers.')}};
+  const startNegotiation=async(offer:Offer)=>{setBusy(true);setError('');try{const r=await request(`/api/buyer/demand-offers/${offer.id}/negotiate`,{method:'POST'});setMessage(r.message||'Negotiation started.');setOffersFor(null);await load();onNegotiationStarted?.()}catch(e:any){setError(e.message||'Could not start negotiation.')}finally{setBusy(false)}};
+  const decline=async(offer:Offer)=>{if(!offersFor)return;setBusy(true);setError('');try{await request(`/api/buyer/demands/${offersFor.id}/offers/${offer.id}/decline`,{method:'POST'});await loadOffers(offersFor);await load()}catch(e:any){setError(e.message||'Could not decline this offer.')}finally{setBusy(false)}};
+  const set=(key:string,value:any)=>setForm((current:any)=>({...current,[key]:value}));
+  return <div className="space-y-6 p-4 sm:p-6">
+    {MAO_DEMAND_PREVIEW_ENABLED && <DemandDraftPreview />}
+    {INSTITUTIONAL_BUYER_PREVIEW_ENABLED && <InstitutionalBuyerPreview />}
+    <header><h1 className="font-display text-2xl tracking-tight text-foreground sm:text-3xl"><DashboardText text="Post Demand Request" /></h1><p className="mt-1 text-muted-foreground"><DashboardText text="Tell producers what your institution needs and compare offers before negotiating." /></p></header>
+    {error&&<div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-red-50 p-3 text-sm text-red-800"><span>{copy(error)}</span><Button type="button" size="sm" variant="outline" disabled={loading} onClick={()=>void load()}><DashboardText text="Retry loading requests" /></Button></div>}{message&&<p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">{copy(message)}</p>}
+    <Card><CardHeader><CardTitle>{editing?copy("Edit Demand Request"):copy("New Demand Request")}</CardTitle><CardDescription><DashboardText text="New and edited requests require HarborAI admin review before producers can see them. This review permits platform publication only; it is not government procurement approval." /></CardDescription></CardHeader><CardContent><form className="grid gap-4 sm:grid-cols-2" onSubmit={submit}>
+      <div><Label htmlFor="demand-product"><DashboardText text="Product type/name" /></Label><Input id="demand-product" required maxLength={255} value={form.product_name} onChange={e=>set('product_name',e.target.value)} placeholder={copy("e.g. Eggplant")}/></div><div><Label htmlFor="demand-category"><DashboardText text="Category" /></Label><Input id="demand-category" value={form.category} onChange={e=>set('category',e.target.value)} placeholder={copy("Vegetables, fruits…")}/></div>
+      <div><Label htmlFor="demand-quantity"><DashboardText text="Required quantity" /></Label><Input id="demand-quantity" type="number" min="0.001" step="0.001" required value={form.quantity_needed} onChange={e=>set('quantity_needed',e.target.value)}/></div><div><Label htmlFor="demand-unit"><DashboardText text="Unit" /></Label><Input id="demand-unit" required value={form.unit} onChange={e=>set('unit',e.target.value)} placeholder={copy("kg, sacks, crates, pieces")}/></div>
+      <div><Label htmlFor="demand-budget"><DashboardText text="Maximum budget per unit (optional)" /></Label><Input id="demand-budget" type="number" min="0" step="0.01" value={form.max_price_per_unit} onChange={e=>set('max_price_per_unit',e.target.value)}/></div><div><Label htmlFor="demand-deadline"><DashboardText text="Offer submission deadline" /></Label><Input id="demand-deadline" type="date" required min={new Date().toISOString().slice(0,10)} value={form.deadline} onChange={e=>set('deadline',e.target.value)}/></div>
+      <div><Label htmlFor="demand-delivery-date"><DashboardText text="Preferred delivery date" /></Label><Input id="demand-delivery-date" type="date" value={form.preferred_delivery_date} onChange={e=>set('preferred_delivery_date',e.target.value)}/></div><div><Label htmlFor="demand-location"><DashboardText text="Delivery location" /></Label><Input id="demand-location" value={form.location} onChange={e=>set('location',e.target.value)} placeholder={copy("Institution / delivery address")}/></div>
+      <div><Label htmlFor="demand-quality"><DashboardText text="Quality / grade" /></Label><Input id="demand-quality" value={form.quality_requirements} onChange={e=>set('quality_requirements',e.target.value)} placeholder={copy("Size, grade, freshness…")}/></div><div><Label htmlFor="demand-special"><DashboardText text="Special requirements" /></Label><Textarea id="demand-special" value={form.special_requirements} onChange={e=>set('special_requirements',e.target.value)} placeholder={copy("Packaging, certifications, delivery instructions…")}/></div>
+      <label className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground sm:col-span-2"><input type="checkbox" checked={form.partial_fulfillment} onChange={e=>set('partial_fulfillment',e.target.checked)}/><DashboardText text="Accept offers from multiple producers to fulfill this request" /></label>
+      <div className="flex flex-wrap gap-2 sm:col-span-2"><Button type="submit" disabled={busy}>{busy?copy("Saving…"):editing?copy("Save changes"):copy("Post request")}</Button>{editing&&<Button type="button" variant="outline" onClick={reset}><DashboardText text="Cancel editing" /></Button>}</div>
+    </form></CardContent></Card>
+    <section ref={requestsRef} className="scroll-mt-24 space-y-3"><div className="flex items-center gap-2"><FileText className="h-5 w-5 text-[#0F9488]"/><h2 className="text-xl font-bold text-foreground"><DashboardText text="My Demand Requests" /></h2></div>{loading?<p className="p-6 text-center text-muted-foreground"><DashboardText text="Loading requests…" /></p>:demands.length===0?<Card><CardContent className="p-8 text-center text-muted-foreground"><DashboardText text="You have not posted a demand request." /></CardContent></Card>:<div className="grid gap-3 lg:grid-cols-2">{demands.map(d=><Card key={d.id} id={`buyer-demand-${d.id}`} className="border-border"><CardContent className="space-y-3 p-4"><div className="flex items-start justify-between gap-2"><div><h3 className="font-bold text-foreground">{d.product_name}</h3><p className="text-sm text-muted-foreground">{d.category||copy("Other")} · {Number(d.quantity_needed).toLocaleString()} {d.unit}</p></div><div><Badge>{reviewLabel(d.review_status)}</Badge><p className="text-xs text-muted-foreground"><DashboardText text="Availability:" />{' '}{d.status}</p>{d.review_reason && <p className="text-xs">{d.review_reason}</p>}</div></div><div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground"><p><DashboardText text="Budget:" />{' '}{d.max_price_per_unit?`₱${Number(d.max_price_per_unit).toLocaleString()} / ${d.unit}`:copy("Open")}</p><p><DashboardText text="Deadline:" />{' '}{d.deadline}</p><p><DashboardText text="Preferred delivery:" />{' '}{d.preferred_delivery_date||copy("Not specified")}</p><p><DashboardText text="Offers:" />{' '}{d.offer_count||0}</p></div><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={()=>void loadOffers(d)}><Search className="mr-2 h-4 w-4"/><DashboardText text="View offers" /></Button>{['Active','Offers Received','open'].includes(d.status)&&<><Button variant="outline" onClick={()=>edit(d)}><DashboardText text="Edit" /></Button><Button variant="ghost" disabled={busy} onClick={()=>void cancel(d)}><X className="mr-1 h-4 w-4"/><DashboardText text="Cancel request" /></Button></>}</div></CardContent></Card>)}</div>}</section>
+    {offersFor&&<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setOffersFor(null)}}><div role="dialog" aria-modal="true" aria-labelledby="offers-title" className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-card p-5 shadow-xl"><div className="flex items-start justify-between gap-3"><div><h2 id="offers-title" className="text-xl font-black text-foreground"><DashboardText text="Supply Offers" /></h2><p className="text-sm text-muted-foreground">{offersFor.product_name} · {offers.length}{' '}<DashboardText text="offer(s)" /></p></div><Button variant="ghost" aria-label={copy("Close offers")} onClick={()=>setOffersFor(null)}><DashboardText text="Close" /></Button></div>{offers.length===0?<p className="py-8 text-center text-sm text-muted-foreground"><DashboardText text="No offers received yet." /></p>:<div className="mt-4 space-y-3">{offers.map(o=><article key={o.id} className="rounded-xl border border-border p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="font-bold text-foreground">{o.producer_name} · {o.listing_name}</h3><p className="text-sm text-muted-foreground">{o.quantity_offered} {offersFor.unit}{' '}<DashboardText text="at ₱" />{' '}{Number(o.proposed_price).toLocaleString()}{' '}<DashboardText text="/ unit" /></p></div><Badge>{o.status}</Badge></div><div className="mt-2 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2"><p><DashboardText text="Available:" />{' '}{o.availability_date||copy("Not specified")}</p><p><DashboardText text="Delivery:" />{' '}{o.delivery_terms||copy("Not specified")}</p><p><DashboardText text="Quality:" />{' '}{o.quality_grade||copy("Not specified")}</p><p><DashboardText text="Notes:" />{' '}{o.notes||copy("None")}</p></div>{['Submitted','Under Review'].includes(o.status)&&<div className="mt-3 flex flex-wrap justify-end gap-2"><Button variant="outline" disabled={busy} onClick={()=>void decline(o)}><DashboardText text="Decline" /></Button><Button disabled={busy} onClick={()=>void startNegotiation(o)}><DashboardText text="Start negotiation" /></Button></div>}</article>)}</div>}</div></div>}
+    <FeedbackModal open={demandPosted} tone="success" title={copy("Demand Submitted for Review")} description={copy("Your demand has been submitted successfully and is awaiting admin review in My Demand Requests.")} detail={postedName?<p className="font-semibold text-foreground">{postedName} · {demands.length}{' '}<DashboardText text="request(s) on file" /></p>:undefined} onClose={()=>setDemandPosted(false)} onCloseLabel={copy("Done")} action={{label:'View My Demands',onClick:()=>{setDemandPosted(false);requestsRef.current?.scrollIntoView({behavior:'smooth',block:'start'})}}}/>
+    <FeedbackModal open={Boolean(submitFailure)} tone="error" title={copy("Unable to Post Demand")} description={submitFailure} detail={<p><DashboardText text="Your entries were kept in the form. Review them and try again." /></p>} onClose={()=>setSubmitFailure('')} onCloseLabel={copy("Back to form")}/>
+  </div>;
 }

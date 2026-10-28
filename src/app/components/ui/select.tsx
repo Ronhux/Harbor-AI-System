@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -60,6 +61,7 @@ function SelectContent({
   position = "popper",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -72,7 +74,7 @@ function SelectContent({
         )}
         position={position}
         {...props}
-      >
+       data-harbor-dashboard-theme={portalTheme}>
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
           className={cn(

@@ -1,4 +1,7 @@
+import { DashboardText, useDashboardCopy } from '../../../i18n/DashboardCopy';
 import { useEffect, useState } from 'react';
+import { resolveListingImages } from '../../../../lib/image';
+import { useLanguage } from '../../../i18n/useLanguage';
 import {
   TrendingUp,
   Package,
@@ -45,147 +48,7 @@ interface DashboardHomeProps {
   onTabChange?: (tab: string) => void;
 }
 
-/**
- * Get the Laravel API base URL.
- *
- * If VITE_API_URL is:
- *   http://127.0.0.1:8000/api
- *
- * this returns:
- *   http://127.0.0.1:8000
- *
- * This is important because product images are normally served
- * from Laravel's /storage directory, not from the Vite server.
- */
-const getApiBaseUrl = () => {
-  const configuredApiUrl = String(import.meta.env.VITE_API_URL || '').trim();
-
-  if (configuredApiUrl) {
-    return configuredApiUrl
-      .replace(/\/+$/, '')
-      .replace(/\/api$/, '');
-  }
-
-  // Local Laravel fallback.
-  return 'http://127.0.0.1:8000';
-};
-
-/**
- * Convert a product image value into a browser-accessible URL.
- */
-const resolveImageUrl = (
-  value: unknown,
-): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  // Handle strings normally.
-  if (typeof value === 'string') {
-    const rawValue = value.trim();
-
-    if (!rawValue) {
-      return null;
-    }
-
-    // Already a complete URL.
-    if (
-      rawValue.startsWith('http://') ||
-      rawValue.startsWith('https://') ||
-      rawValue.startsWith('blob:') ||
-      rawValue.startsWith('data:')
-    ) {
-      return rawValue;
-    }
-
-    const apiBaseUrl = getApiBaseUrl();
-
-    // Normalize slashes.
-    let normalizedValue = rawValue.replace(/\\/g, '/');
-
-    // Remove leading slashes.
-    normalizedValue = normalizedValue.replace(/^\/+/, '');
-
-    // Remove Laravel "public/" prefix if it exists.
-    normalizedValue = normalizedValue.replace(/^public\//i, '');
-
-    // Remove "storage/" because we will add it consistently below.
-    normalizedValue = normalizedValue.replace(/^storage\//i, '');
-
-    // Remove "storage/app/public/" if returned by backend.
-    normalizedValue = normalizedValue.replace(
-      /^storage\/app\/public\//i,
-      '',
-    );
-
-    // If the backend somehow returns an API URL, avoid creating
-    // /storage/api/... URLs.
-    if (normalizedValue.startsWith('api/')) {
-      return `${apiBaseUrl}/${normalizedValue}`;
-    }
-
-    return `${apiBaseUrl}/storage/${normalizedValue}`;
-  }
-
-  /**
-   * Some APIs may return image information as an object.
-   * Try the common properties.
-   */
-  if (typeof value === 'object') {
-    const imageObject = value as Record<string, unknown>;
-
-    const possibleValues = [
-      imageObject.url,
-      imageObject.image_url,
-      imageObject.imageUrl,
-      imageObject.path,
-      imageObject.image_path,
-      imageObject.imagePath,
-    ];
-
-    for (const possibleValue of possibleValues) {
-      const resolved = resolveImageUrl(possibleValue);
-
-      if (resolved) {
-        return resolved;
-      }
-    }
-  }
-
-  return null;
-};
-
-/**
- * Collect every possible image field returned by the backend.
- *
- * This allows the component to try another field if the first
- * image path is invalid.
- */
-const getProductImageCandidates = (
-  product: any,
-): string[] => {
-  const values = [
-    product?.image_url,
-    product?.imageUrl,
-    product?.image_path,
-    product?.imagePath,
-    product?.image,
-    product?.photo_url,
-    product?.photoUrl,
-    product?.photo_path,
-    product?.photoPath,
-    product?.product_image,
-    product?.productImage,
-    product?.thumbnail_url,
-    product?.thumbnailUrl,
-  ];
-
-  const urls = values
-    .map((value) => resolveImageUrl(value))
-    .filter((value): value is string => Boolean(value));
-
-  return [...new Set(urls)];
-};
+const getProductImageCandidates = (product: any): string[] => resolveListingImages(product).map(image => image.url);
 
 /**
  * Product image component.
@@ -199,6 +62,7 @@ function DashboardProductImage({
   candidates: string[];
   alt: string;
 }) {
+  const copy = useDashboardCopy();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -225,7 +89,7 @@ function DashboardProductImage({
 
   if (currentSrc && !imageFailed) {
     return (
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F5F1E5]">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
         <img
           src={currentSrc}
           alt={alt}
@@ -240,7 +104,7 @@ function DashboardProductImage({
   return (
     <div
       className="flex aspect-[4/3] w-full items-center justify-center bg-[#0F9488]/10 text-[#0F9488]"
-      aria-label="No product image available"
+      aria-label={copy("No product image available")}
     >
       <Package
         className="h-12 w-12"
@@ -253,11 +117,14 @@ function DashboardProductImage({
 export default function DashboardHome({
   onTabChange,
 }: DashboardHomeProps) {
-  const [showRecommendations, setShowRecommendations] =
-    useState(false);
+  const copy = useDashboardCopy();
+  const { t } = useLanguage();
 
   const [availableProducts, setAvailableProducts] =
     useState<any[]>([]);
+
+  const [dashboard, setDashboard] = useState<any>(null);
+  const [dashboardError, setDashboardError] = useState('');
 
   const [productsLoading, setProductsLoading] =
     useState(true);
@@ -280,10 +147,7 @@ export default function DashboardHome({
           '/api/producer/dashboard',
         );
 
-        console.log(
-          'HarborAI dashboard response:',
-          response,
-        );
+
 
         const products = Array.isArray(
           response?.product_listings,
@@ -295,6 +159,8 @@ export default function DashboardHome({
           return;
         }
 
+        setDashboardError('');
+        setDashboard(response);
         setAvailableProducts(
           products.filter(
             (product: any) =>
@@ -312,6 +178,7 @@ export default function DashboardHome({
         );
 
         if (mounted) {
+          setDashboardError('Unable to load dashboard. Please reload to try again.');
           setAvailableProducts([]);
         }
       } finally {
@@ -322,167 +189,58 @@ export default function DashboardHome({
     };
 
     loadAvailableProducts();
+    window.addEventListener('focus', loadAvailableProducts);
 
     return () => {
       mounted = false;
+      window.removeEventListener('focus', loadAvailableProducts);
     };
   }, []);
 
   /**
    * Dashboard statistics.
    */
+  const money = (value: number) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(value);
+  const metrics = dashboard?.stats;
+  const averages = metrics?.average_prices_by_unit ?? [];
   const stats = [
-    {
-      label: 'Total Revenue',
-      value: '₱84,250',
-      change: '+12.5%',
-      trend: 'up',
-      icon: DollarSign,
-      iconBg: 'bg-[#22C55E]/15',
-      iconColor: 'text-[#22C55E]',
-    },
-    {
-      label: 'Active Listings',
-      value: '12',
-      change: '+3',
-      trend: 'up',
-      icon: Package,
-      iconBg: 'bg-[#123C5C]/10',
-      iconColor: 'text-[#123C5C]',
-    },
-    {
-      label: 'Pending Orders',
-      value: '8',
-      change: '-2',
-      trend: 'down',
-      icon: Users,
-      iconBg: 'bg-[#F59E0B]/15',
-      iconColor: 'text-[#F59E0B]',
-    },
-    {
-      label: 'Average Price',
-      value: '₱125/kg',
-      change: '+5.2%',
-      trend: 'up',
-      icon: TrendingUp,
-      iconBg: 'bg-[#0F9488]/15',
-      iconColor: 'text-[#0F9488]',
-    },
-  ];
-
-  /**
-   * Revenue chart data.
-   */
-  const salesData = [
-    {
-      month: 'Jan',
-      revenue: 45000,
-    },
-    {
-      month: 'Feb',
-      revenue: 52000,
-    },
-    {
-      month: 'Mar',
-      revenue: 48000,
-    },
-    {
-      month: 'Apr',
-      revenue: 61000,
-    },
-    {
-      month: 'May',
-      revenue: 55000,
-    },
-    {
-      month: 'Jun',
-      revenue: 68000,
-    },
-  ];
-
-  /**
-   * Product distribution.
-   */
-  const productDistribution = [
-    {
-      name: 'Rice',
-      value: 35,
-      id: 'rice',
-    },
-    {
-      name: 'Corn',
-      value: 25,
-      id: 'corn',
-    },
-    {
-      name: 'Fish',
-      value: 20,
-      id: 'fish',
-    },
-    {
-      name: 'Vegetables',
-      value: 15,
-      id: 'vegetables',
-    },
-    {
-      name: 'Others',
-      value: 5,
-      id: 'others',
-    },
-  ];
-
-  const COLORS = [
-    '#22C55E',
-    '#F59E0B',
-    '#0F9488',
-    '#15803D',
-    '#123C5C',
-  ];
-
-  /**
-   * Recent orders.
-   */
-  const recentOrders = [
-    {
-      id: 'ORD-001',
-      buyer: 'Aparri LGU',
-      product: 'Premium Rice',
-      quantity: '500 kg',
-      status: 'Processing',
-      amount: '₱25,000',
-    },
-    {
-      id: 'ORD-002',
-      buyer: 'Kadiwa Outlet 1',
-      product: 'Fresh Tilapia',
-      quantity: '200 kg',
-      status: 'Delivered',
-      amount: '₱18,000',
-    },
-    {
-      id: 'ORD-003',
-      buyer: 'DA-RFO II',
-      product: 'Organic Corn',
-      quantity: '300 kg',
-      status: 'Pending',
-      amount: '₱15,000',
-    },
-  ];
+    { label: t('producer.totalRevenue'), value: money(metrics?.total_revenue ?? 0), key: 'total_revenue', icon: DollarSign },
+    { label: t('producer.activeListings'), value: metrics?.active_listings ?? 0, key: 'active_listings', icon: Package },
+    { label: t('producer.pendingOrders'), value: metrics?.pending_orders ?? 0, key: 'pending_orders', icon: Users },
+    { label: t('producer.avgPrice'), value: averages.length ? averages.map((a: any) => money(a.price) + '/' + a.unit).join(' · ') : '—', key: 'average_listing_price', icon: TrendingUp },
+  ].map(stat => {
+    const comparison = metrics?.changes?.[stat.key];
+    return { ...stat, value: productsLoading ? '…' : dashboardError ? '—' : stat.value,
+      change: comparison?.available ? String(comparison.percent) + '%' : null,
+      trend: comparison?.direction, iconBg: 'bg-[#0F9488]/10', iconColor: 'text-[#0F9488]' };
+  });
+  const salesData: {month: string; revenue: number}[] = dashboard?.revenue_by_month ?? [];
+  const productDistribution: {name: string; value: number; id: string}[] = (dashboard?.product_mix ?? []).map((row: any) => ({ name: row.category, value: row.listings, id: row.category }));
+  const COLORS = ['#22C55E', '#F59E0B', '#0F9488', '#15803D', '#123C5C'];
+  const recentOrders: {id: string; buyer: string; product: string; quantity: string; status: string; amount: string}[] = (dashboard?.recent_orders ?? []).map((order: any) => ({
+    id: String(order.order_id), buyer: order.buyer?.organization_name || order.buyer?.name,
+    product: order.details.map((d: any) => d.product_name).join(', '),
+    quantity: order.details.map((d: any) => String(d.quantity) + ' ' + (d.unit || '')).join(', '),
+    status: order.fulfillment_status, amount: money(order.producer_subtotal),
+  }));
 
   return (
     <>
-      <div className="space-y-6 p-6">
+      {/* Compact mobile rhythm: tight spacing and padding, restored to
+          generous desktop spacing from sm upward. */}
+      <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
 
+      {dashboardError && <p role="alert">{dashboardError}</p>}
       {/* =========================================================
           WELCOME SECTION
       ========================================================= */}
       <div>
-        <h1 className="font-display text-2xl tracking-tight text-[#123C5C] sm:text-3xl">
-          Welcome ulit!
+        <h1 className="font-display text-2xl tracking-tight text-foreground sm:text-3xl">
+          {t('producer.welcome')}
         </h1>
 
-        <p className="mt-1 text-[#45586B]">
-          Ito ang mga nangyayari sa iyong enterprise ngayon.
+        <p className="mt-1 text-muted-foreground">
+          {t('producer.welcomeSub')}
         </p>
       </div>
 
@@ -496,7 +254,7 @@ export default function DashboardHome({
           return (
             <Card
               key={idx}
-              className="border border-[#E7E1D0] transition-shadow duration-300 hover:shadow-md"
+              className="border border-border transition-shadow duration-300 hover:shadow-md"
             >
               <CardContent className="min-w-0 p-3 sm:p-6">
                 <div className="mb-2 flex items-center justify-between sm:mb-4">
@@ -508,7 +266,8 @@ export default function DashboardHome({
                     />
                   </div>
 
-                  <div
+                  {stat.change && <div
+                    title={metrics?.comparison_label}
                     className={`flex items-center gap-1 text-sm ${
                       stat.trend === 'up'
                         ? 'text-[#22C55E]'
@@ -522,17 +281,18 @@ export default function DashboardHome({
                     )}
 
                     <span>{stat.change}</span>
-                  </div>
+                  </div>}
                 </div>
 
                 <div>
-                  <div className="truncate text-lg font-bold leading-tight text-[#123C5C] sm:text-2xl">
+                  <div className="break-words text-lg font-bold leading-tight text-foreground sm:text-2xl">
                     {stat.value}
                   </div>
 
-                  <div className="text-xs leading-tight text-[#45586B] sm:text-sm">
+                  <div className="text-xs leading-tight text-muted-foreground sm:text-sm">
                     {stat.label}
                   </div>
+                  {!productsLoading && !dashboardError && !stat.change && <p className="mt-1 text-xs text-muted-foreground"><DashboardText text="No comparable history" /></p>}
                 </div>
               </CardContent>
             </Card>
@@ -543,18 +303,18 @@ export default function DashboardHome({
       {/* =========================================================
           MY DIGITAL STALL
       ========================================================= */}
-      <Card className="overflow-hidden border-[#E7E1D0] bg-white shadow-sm">
+      <Card className="overflow-hidden border-border bg-card shadow-sm">
 
-        <CardHeader className="border-b border-[#E7E1D0]/70 bg-[#F5F1E5]/45">
+        <CardHeader className="border-b border-border/70 bg-background/45">
           <div className="flex items-center justify-between gap-3">
 
             <div>
-              <CardTitle className="font-display text-2xl text-[#123C5C]">
-                My Digital Stall
+              <CardTitle className="font-display text-2xl text-foreground">
+                {t('producer.digitalStall')}
               </CardTitle>
 
               <CardDescription className="mt-2">
-                Your products and listings at a glance.
+                {t('producer.yourProductsAtGlance') || copy("Your products and listings at a glance.")}
               </CardDescription>
             </div>
 
@@ -563,9 +323,7 @@ export default function DashboardHome({
               size="sm"
               onClick={() => onTabChange?.('listings')}
               className="border-[#0F9488] text-[#0F9488] hover:bg-[#0F9488]/10"
-            >
-              View All Listings
-            </Button>
+            ><DashboardText text="View All Listings" /></Button>
 
           </div>
         </CardHeader>
@@ -574,24 +332,20 @@ export default function DashboardHome({
 
           {/* LOADING */}
           {productsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-[#45586B]">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0F9488] border-t-transparent" />
-              <span>Nilo-load ang mga produkto...</span>
+              <span><DashboardText text="Nilo-load ang mga produkto..." /></span>
             </div>
 
           ) : availableProducts.length === 0 ? (
 
             /* EMPTY STATE */
-            <div className="rounded-xl border border-dashed border-[#E7E1D0] bg-[#F5F1E5]/40 p-8 text-center">
+            <div className="rounded-xl border border-dashed border-border bg-background/40 p-6 text-center sm:p-8">
               <Package className="mx-auto mb-3 h-10 w-10 text-[#0F9488]" />
 
-              <p className="text-sm font-medium text-[#123C5C]">
-                Wala ka pang available na produkto.
-              </p>
+              <p className="text-sm font-medium text-foreground"><DashboardText text="Wala ka pang available na produkto." /></p>
 
-              <p className="mt-1 text-xs text-[#45586B]">
-                Add a product listing to display it here.
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground"><DashboardText text="Add a product listing to display it here." /></p>
             </div>
 
           ) : (
@@ -657,11 +411,7 @@ export default function DashboardHome({
                      * You can see the actual image information
                      * in the browser console.
                      */
-                    console.log(
-                      `HarborAI product ${productName} image candidates:`,
-                      imageCandidates,
-                      product,
-                    );
+
 
                     return (
                       <article
@@ -670,7 +420,7 @@ export default function DashboardHome({
                           product?.id ??
                           productName
                         }-${index}`}
-                        className="overflow-hidden rounded-xl border border-[#E7E1D0] bg-white shadow-sm transition-shadow hover:shadow-md"
+                        className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
                       >
 
                         {/* =================================================
@@ -693,7 +443,7 @@ export default function DashboardHome({
                             }
                           }}
                           className="group block w-full cursor-pointer border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22C55E] focus-visible:ring-offset-2"
-                          aria-label={`View details for ${productName}`}
+                          aria-label={copy("View details for {0}", [productName])}
                         >
                           <div className="relative overflow-hidden">
                             <DashboardProductImage
@@ -702,9 +452,7 @@ export default function DashboardHome({
                             />
 
                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#123C5C]/0 transition-all duration-300 group-hover:bg-[#123C5C]/35">
-                              <div className="translate-y-2 rounded-full bg-white/95 px-4 py-2 text-sm font-bold text-[#123C5C] opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                                Click to view details
-                              </div>
+                              <div className="translate-y-2 rounded-full bg-card/95 px-4 py-2 text-sm font-bold text-foreground opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"><DashboardText text="Click to view details" /></div>
                             </div>
                           </div>
                         </button>
@@ -717,11 +465,11 @@ export default function DashboardHome({
                           <div className="flex items-start justify-between gap-3">
 
                             <div className="min-w-0">
-                              <h3 className="truncate font-bold text-[#123C5C]">
+                              <h3 className="truncate font-bold text-foreground">
                                 {productName}
                               </h3>
 
-                              <p className="mt-1 text-sm text-[#45586B]">
+                              <p className="mt-1 text-sm text-muted-foreground">
                                 {category}
                               </p>
                             </div>
@@ -732,21 +480,17 @@ export default function DashboardHome({
 
                           </div>
 
-                          <div className="space-y-1 text-sm text-[#45586B]">
+                          <div className="space-y-1 text-sm text-muted-foreground">
 
                             <p>
-                              <span className="font-semibold text-[#123C5C]">
-                                Price:
-                              </span>{' '}
+                              <span className="font-semibold text-foreground"><DashboardText text="Price:" /></span>{' '}
                               ₱
                               {price.toLocaleString()}{' '}
                               / {unit}
                             </p>
 
                             <p>
-                              <span className="font-semibold text-[#123C5C]">
-                                Available:
-                              </span>{' '}
+                              <span className="font-semibold text-foreground"><DashboardText text="Available:" /></span>{' '}
                               {quantity} {unit}
                             </p>
 
@@ -767,24 +511,22 @@ export default function DashboardHome({
       {/* =========================================================
           CHARTS
       ========================================================= */}
-      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
 
         {/* REVENUE CHART */}
         <Card className="lg:col-span-2">
 
           <CardHeader>
             <CardTitle>
-              Revenue Trend
+              {t('producer.revenueTrend')}
             </CardTitle>
 
-            <CardDescription>
-              Buwanang revenue sa nakalipas na 6 na buwan
-            </CardDescription>
+            <CardDescription><DashboardText text="Buwanang revenue sa nakalipas na 6 na buwan" /></CardDescription>
           </CardHeader>
 
           <CardContent>
 
-            <ResponsiveContainer
+            {!salesData.some(row => row.revenue > 0) ? <p className="py-12 text-center text-sm">{productsLoading ? copy("Loading…") : dashboardError ? copy("Revenue unavailable") : copy("No revenue data yet")}</p> : <ResponsiveContainer
               width="100%"
               height={260}
             >
@@ -813,7 +555,7 @@ export default function DashboardHome({
                 />
 
               </LineChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer>}
 
           </CardContent>
         </Card>
@@ -823,17 +565,15 @@ export default function DashboardHome({
 
           <CardHeader>
             <CardTitle>
-              Product Mix
+              {t('producer.productMix')}
             </CardTitle>
 
-            <CardDescription>
-              Distribution ayon sa uri ng produkto
-            </CardDescription>
+            <CardDescription><DashboardText text="Active in-stock listings by category" /></CardDescription>
           </CardHeader>
 
           <CardContent>
 
-            <ResponsiveContainer
+            {!productDistribution.length ? <p className="py-12 text-center text-sm">{productsLoading ? copy("Loading…") : dashboardError ? copy("Product data unavailable") : copy("No product data yet")}</p> : <ResponsiveContainer
               width="100%"
               height={300}
             >
@@ -877,7 +617,7 @@ export default function DashboardHome({
                 <Tooltip />
 
               </PieChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer>}
 
           </CardContent>
         </Card>
@@ -894,13 +634,9 @@ export default function DashboardHome({
           <div className="flex items-center justify-between">
 
             <div>
-              <CardTitle>
-                Mga Kamakailang Orders
-              </CardTitle>
+              <CardTitle><DashboardText text="Mga Kamakailang Orders" /></CardTitle>
 
-              <CardDescription>
-                Pinakabagong activity ng iyong orders
-              </CardDescription>
+              <CardDescription><DashboardText text="Pinakabagong activity ng iyong orders" /></CardDescription>
             </div>
 
             <Button
@@ -909,9 +645,7 @@ export default function DashboardHome({
               onClick={() =>
                 onTabChange?.('orders')
               }
-            >
-              Tingnan Lahat
-            </Button>
+            ><DashboardText text="Tingnan Lahat" /></Button>
 
           </div>
 
@@ -921,20 +655,21 @@ export default function DashboardHome({
 
           <div className="space-y-4">
 
+            {!recentOrders.length && <p className="py-6 text-center text-sm">{productsLoading ? copy("Loading…") : dashboardError ? copy("Orders unavailable") : copy("No orders yet")}</p>}
             {recentOrders.map(
               (order) => (
                 <div
                   key={order.id}
-                  className="flex flex-col gap-2 rounded-xl border border-[#E7E1D0] p-3 transition hover:bg-[#F5F1E5] sm:flex-row sm:items-center sm:justify-between sm:p-4"
+                  className="flex flex-col gap-2 rounded-xl border border-border p-3 transition hover:bg-background sm:flex-row sm:items-center sm:justify-between sm:p-4"
                 >
 
                   <div className="flex-1">
 
                     <div className="mb-1 flex min-w-0 items-center justify-between gap-2 sm:justify-start sm:gap-3">
 
-                      <span className="truncate font-semibold text-[#123C5C]">{order.product}</span>
+                      <span className="truncate font-semibold text-foreground">{order.product}</span>
 
-                      <span className="font-medium text-[#123C5C]">
+                      <span className="font-medium text-foreground">
                         {order.id}
                       </span>
 
@@ -955,7 +690,7 @@ export default function DashboardHome({
 
                     </div>
 
-                    <div className="text-sm text-[#45586B]">
+                    <div className="text-sm text-muted-foreground">
                       {order.buyer} •{' '}
                       {order.product}
                     </div>
@@ -964,11 +699,11 @@ export default function DashboardHome({
 
                   <div className="flex items-center justify-between gap-3 text-left sm:block sm:text-right">
 
-                    <div className="font-bold text-[#123C5C]">
+                    <div className="font-bold text-foreground">
                       {order.amount}
                     </div>
 
-                    <div className="text-sm text-[#45586B]">
+                    <div className="text-sm text-muted-foreground">
                       {order.quantity}
                     </div>
 
@@ -991,24 +726,18 @@ export default function DashboardHome({
         {/* ADD LISTING */}
         <Card className="border-[#22C55E]/30 bg-[#22C55E]/5">
 
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
 
-            <h3 className="mb-2 font-bold text-[#123C5C]">
-              Magdagdag ng Bagong Listing
-            </h3>
+            <h3 className="mb-2 font-bold text-foreground"><DashboardText text="Magdagdag ng Bagong Listing" /></h3>
 
-            <p className="mb-4 text-sm text-[#15803D]">
-              Mag-list ng bagong produkto sa iyong digital stall
-            </p>
+            <p className="mb-4 text-sm text-[#15803D]"><DashboardText text="Mag-list ng bagong produkto sa iyong digital stall" /></p>
 
             <Button
               className="rounded-full bg-[#22C55E] font-bold hover:bg-[#15803D]"
               onClick={() =>
                 onTabChange?.('listings')
               }
-            >
-              Gumawa ng Listing
-            </Button>
+            ><DashboardText text="Gumawa ng Listing" /></Button>
 
           </CardContent>
         </Card>
@@ -1016,132 +745,33 @@ export default function DashboardHome({
         {/* MARKET INSIGHTS */}
         <Card className="border-[#0F9488]/30 bg-[#0F9488]/5">
 
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
 
-            <h3 className="mb-2 font-bold text-[#123C5C]">
-              Tingnan ang Market Insights
-            </h3>
+            <h3 className="mb-2 font-bold text-foreground"><DashboardText text="Tingnan ang Market Insights" /></h3>
 
-            <p className="mb-4 text-sm text-[#0B4842]">
-              Makakuha ng AI-powered market insight cards
-            </p>
+            <p className="mb-4 text-sm text-[#0B4842]"><DashboardText text="Review available market references. Product Assistant interpretation depends on provider availability." /></p>
 
-            <Dialog
-              open={showRecommendations}
-              onOpenChange={
-                setShowRecommendations
-              }
-            >
-
-              <DialogTrigger asChild>
-
-                <Button
-                  variant="outline"
-                  className="rounded-full border-[#0F9488] font-bold text-[#0F9488] hover:bg-[#0F9488]/10"
-                >
-                  View Now
-                </Button>
-
-              </DialogTrigger>
-
-              <DialogContent className="max-w-2xl">
-
-                <DialogHeader>
-
-                  <DialogTitle>
-                    AI Market Insights
-                  </DialogTitle>
-
-                  <DialogDescription>
-                    Personalized insights based on your farming data and market trends
-                  </DialogDescription>
-
-                </DialogHeader>
-
-                <div className="space-y-4">
-
-                  <div className="rounded-lg bg-[#0F9488]/5 p-4">
-
-                    <h4 className="mb-2 font-semibold text-[#123C5C]">
-                      🌾 Crop Optimization
-                    </h4>
-
-                    <p className="text-sm text-[#0B4842]">
-                      Based on your recent rice production, consider switching 20% of your land to high-yield varieties.
-                      This could increase your revenue by 15-25% based on current market prices.
-                    </p>
-
-                  </div>
-
-                  <div className="rounded-lg bg-[#22C55E]/5 p-4">
-
-                    <h4 className="mb-2 font-semibold text-[#123C5C]">
-                      📈 Market Timing
-                    </h4>
-
-                    <p className="text-sm text-[#15803D]">
-                      Historical data shows optimal selling time for rice is in 2 weeks.
-                      Current trends indicate a 8% price increase expected.
-                    </p>
-
-                  </div>
-
-                  <div className="rounded-lg bg-[#123C5C]/5 p-4">
-
-                    <h4 className="mb-2 font-semibold text-[#123C5C]">
-                      🔄 Diversification
-                    </h4>
-
-                    <p className="text-sm text-[#45586B]">
-                      Your enterprise could benefit from adding aquaculture.
-                      Local demand for fresh fish is growing by 12% annually.
-                    </p>
-
-                  </div>
-
-                  <div className="rounded-lg bg-[#F59E0B]/10 p-4">
-
-                    <h4 className="mb-2 font-semibold text-[#123C5C]">
-                      💡 Sustainability
-                    </h4>
-
-                    <p className="text-sm text-[#92400E]">
-                      Implementing organic farming practices could qualify you for premium pricing
-                      and government subsidies worth ₱50,000 annually.
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </DialogContent>
-            </Dialog>
+            <Button variant="outline" onClick={() => onTabChange?.('insights')}><DashboardText text="View market insights" /></Button>
 
           </CardContent>
         </Card>
 
-        {/* PROGRAMS */}
+        {/* DEMAND OPPORTUNITIES */}
         <Card className="border-[#123C5C]/20 bg-[#123C5C]/5">
 
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
 
-            <h3 className="mb-2 font-bold text-[#123C5C]">
-              Tingnan ang Programs
-            </h3>
+            <h3 className="mb-2 font-bold text-foreground"><DashboardText text="Tingnan ang Demand Opportunities" /></h3>
 
-            <p className="mb-4 text-sm text-[#45586B]">
-              Tingnan ang status ng iyong program eligibility
-            </p>
+            <p className="mb-4 text-sm text-muted-foreground"><DashboardText text="Review active buyer requests using persisted marketplace data." /></p>
 
             <Button
               variant="outline"
-              className="rounded-full border-[#123C5C] font-bold text-[#123C5C] hover:bg-[#123C5C]/10"
+              className="rounded-full border-[#123C5C] font-bold text-foreground hover:bg-[#123C5C]/10"
               onClick={() =>
-                onTabChange?.('programs')
+                onTabChange?.('demand-opportunities')
               }
-            >
-              Check Now
-            </Button>
+            ><DashboardText text="View Requests" /></Button>
 
           </CardContent>
         </Card>
@@ -1161,7 +791,7 @@ export default function DashboardHome({
           }
         }}
       >
-        <DialogContent className="w-[96vw] max-w-5xl overflow-hidden border-0 bg-[#F8F7F3] p-0 shadow-2xl sm:rounded-2xl">
+        <DialogContent className="w-[96vw] max-w-5xl overflow-hidden border-0 bg-card p-0 shadow-2xl sm:rounded-2xl">
           {viewingProduct && (() => {
             const productName =
               viewingProduct?.product_name ||
@@ -1208,22 +838,18 @@ export default function DashboardHome({
 
             return (
               <div className="max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between border-b border-[#E7E1D0] bg-[#F8F7F3] px-5 py-4 sm:px-8">
+                <div className="flex items-center justify-between border-b border-border bg-card px-5 py-4 sm:px-8">
                   <button
                     type="button"
                     onClick={() => setViewingProduct(null)}
-                    className="text-sm font-semibold text-[#7C7468] transition-colors hover:text-[#123C5C]"
-                  >
-                    ← Bumalik sa Dashboard
-                  </button>
+                    className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                  ><DashboardText text="← Bumalik sa Dashboard" /></button>
 
-                  <div className="pr-8 text-right text-xs font-medium uppercase tracking-[0.16em] text-[#9A9287]">
-                    Detalye ng Produkto
-                  </div>
+                  <div className="pr-8 text-right text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground"><DashboardText text="Detalye ng Produkto" /></div>
                 </div>
 
                 <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
-                  <div className="border-b border-[#E7E1D0] bg-[#F8F7F3] p-5 sm:p-8 lg:border-b-0 lg:border-r">
+                  <div className="border-b border-border bg-card p-5 sm:p-8 lg:border-b-0 lg:border-r">
                     <div className="overflow-hidden rounded-xl bg-[#F1EEE6] shadow-sm">
                       <DashboardProductImage
                         candidates={imageCandidates}
@@ -1232,30 +858,24 @@ export default function DashboardHome({
                     </div>
 
                     <div className="mt-7">
-                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#8D857A]">
-                        About This Item
-                      </p>
+                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground"><DashboardText text="About This Item" /></p>
 
-                      <p className="max-w-2xl text-[15px] leading-7 text-[#45586B]">
+                      <p className="max-w-2xl text-[15px] leading-7 text-muted-foreground">
                         {description}
                       </p>
 
-                      <div className="mt-6 border-t border-[#E7E1D0] pt-5">
+                      <div className="mt-6 border-t border-border pt-5">
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#8D857A]">
-                              Category
-                            </p>
-                            <p className="mt-1 font-semibold capitalize text-[#123C5C]">
+                            <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground"><DashboardText text="Category" /></p>
+                            <p className="mt-1 font-semibold capitalize text-foreground">
                               {category}
                             </p>
                           </div>
 
                           <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#8D857A]">
-                              Unit
-                            </p>
-                            <p className="mt-1 font-semibold text-[#123C5C]">
+                            <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground"><DashboardText text="Unit" /></p>
+                            <p className="mt-1 font-semibold text-foreground">
                               {unit}
                             </p>
                           </div>
@@ -1264,7 +884,7 @@ export default function DashboardHome({
                     </div>
                   </div>
 
-                  <div className="bg-white p-5 sm:p-8 lg:p-10">
+                  <div className="bg-card p-5 sm:p-8 lg:p-10">
                     <div className="max-w-xl">
                       <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#15803D]">
                         {category}
@@ -1279,25 +899,21 @@ export default function DashboardHome({
                           ₱{price.toLocaleString()}
                         </span>
 
-                        <span className="pb-1 text-lg text-[#8D857A]">
+                        <span className="pb-1 text-lg text-muted-foreground">
                           / {unit}
                         </span>
                       </div>
 
-                      <div className="mt-6 grid grid-cols-2 border-y border-[#E7E1D0]">
-                        <div className="border-r border-[#E7E1D0] py-4 pr-4">
-                          <p className="text-xs uppercase tracking-[0.1em] text-[#9A9287]">
-                            Available
-                          </p>
-                          <p className="mt-1 text-base font-bold text-[#123C5C]">
+                      <div className="mt-6 grid grid-cols-2 border-y border-border">
+                        <div className="border-r border-border py-4 pr-4">
+                          <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground"><DashboardText text="Available" /></p>
+                          <p className="mt-1 text-base font-bold text-foreground">
                             {Number(quantity).toLocaleString()} {unit}
                           </p>
                         </div>
 
                         <div className="py-4 pl-4">
-                          <p className="text-xs uppercase tracking-[0.1em] text-[#9A9287]">
-                            Status
-                          </p>
+                          <p className="text-xs uppercase tracking-[0.1em] text-muted-foreground"><DashboardText text="Status" /></p>
                           <div className="mt-1">
                             <Badge className="border-0 bg-[#22C55E] px-3 py-1 text-xs font-bold text-white">
                               {status}
@@ -1307,18 +923,14 @@ export default function DashboardHome({
                       </div>
 
                       <div className="mt-8">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#9A9287]">
-                          Inventory
-                        </p>
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground"><DashboardText text="Inventory" /></p>
 
-                        <div className="mt-3 flex items-center justify-between rounded-xl border border-[#E7E1D0] bg-[#F8F7F3] px-5 py-4">
+                        <div className="mt-3 flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4">
                           <div>
-                            <p className="text-sm text-[#7C7468]">
-                              Available quantity
-                            </p>
-                            <p className="mt-1 text-2xl font-black text-[#123C5C]">
+                            <p className="text-sm text-muted-foreground"><DashboardText text="Available quantity" /></p>
+                            <p className="mt-1 text-2xl font-black text-foreground">
                               {Number(quantity).toLocaleString()}
-                              <span className="ml-2 text-base font-medium text-[#7C7468]">
+                              <span className="ml-2 text-base font-medium text-muted-foreground">
                                 {unit}
                               </span>
                             </p>
@@ -1333,9 +945,7 @@ export default function DashboardHome({
                           type="button"
                           onClick={() => setViewingProduct(null)}
                           className="h-12 w-full rounded-lg bg-[#123C5C] font-bold text-white shadow-sm hover:bg-[#0F2F48]"
-                        >
-                          Isara
-                        </Button>
+                        ><DashboardText text="Isara" /></Button>
                       </div>
                     </div>
                   </div>

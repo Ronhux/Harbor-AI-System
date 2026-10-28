@@ -1,3 +1,5 @@
+import { DashboardText, useDashboardCopy } from '../../../i18n/DashboardCopy';
+import { useNotificationRecord } from '../../../contracts/useNotificationRecord';
 import { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
@@ -9,6 +11,8 @@ import {
   ChevronDown,
   ArrowRight,
 } from 'lucide-react';
+
+import { request } from '../../../../lib/api';
 
 import { Card, CardContent } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
@@ -57,21 +61,6 @@ interface Order {
 }
 
 type OrderTab = 'ongoing' | 'completed';
-
-const getLaravelBaseUrl = (): string => {
-  const configured = String(import.meta.env.VITE_API_URL || '').trim();
-
-  if (configured) {
-    return configured.replace(/\/+$/, '').replace(/\/api$/, '');
-  }
-
-  return 'http://127.0.0.1:8000';
-};
-
-const getApiUrl = (path: string): string => {
-  const cleanPath = path.replace(/^\/+/, '');
-  return `${getLaravelBaseUrl()}/${cleanPath}`;
-};
 
 const normalizeStatus = (status?: string): string => {
   return String(status || '')
@@ -195,6 +184,7 @@ const formatOrderDate = (date?: string) => {
 };
 
 export default function Orders() {
+  const copy = useDashboardCopy();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -204,6 +194,11 @@ export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  useNotificationRecord('orders', !loading && !error, id => {
+    const order = orders.find(o => o.order_id === id);
+    if (order) setSelectedOrder(order);
+    else setError('This order is not available to your account.');
+  });
 
   useEffect(() => {
     fetchOrders();
@@ -224,26 +219,11 @@ export default function Orders() {
       setLoading(true);
       setError('');
 
-      const token = localStorage.getItem('authToken');
-
-      const response = await fetch(getApiUrl('/api/buyer/orders'), {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : {}),
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch orders (${response.status})`);
-      }
-
-      const data = await response.json();
+      // Shared request() helper: attaches the sanitized auth token from
+      // localStorage, sends Sanctum credentials, and parses the JSON with a
+      // consistent error contract. Paths stay origin-relative so the build
+      // does not need a hardcoded 127.0.0.1:8000 API base URL.
+      const data = await request('/api/buyer/orders');
 
       const nextOrders = Array.isArray(data)
         ? data
@@ -254,9 +234,9 @@ export default function Orders() {
             : [];
 
       setOrders(nextOrders);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading orders:', err);
-      setError('Unable to load your orders.');
+      setError(err?.message || 'Unable to load your orders.');
       setOrders([]);
     } finally {
       setLoading(false);
@@ -333,10 +313,10 @@ export default function Orders() {
 
           <div className="h-px w-full bg-[#E6E2D9]" />
 
-          <div className="mt-6 h-12 w-full animate-pulse rounded-xl bg-white ring-1 ring-[#E8E4DB]" />
+          <div className="mt-6 h-12 w-full animate-pulse rounded-xl bg-card ring-1 ring-[#E8E4DB]" />
           <div className="mt-5 h-10 w-72 animate-pulse rounded bg-[#E8E4DB]" />
           <div className="mt-8 flex justify-center">
-            <div className="h-36 w-96 max-w-full animate-pulse rounded-2xl bg-white" />
+            <div className="h-36 w-96 max-w-full animate-pulse rounded-2xl bg-card" />
           </div>
         </div>
       </div>
@@ -350,17 +330,11 @@ export default function Orders() {
             PAGE HEADER
         ========================================================== */}
         <header className="mb-6">
-          <div className="inline-flex items-center rounded-full bg-[#EAF5EA] px-3.5 py-1.5 text-xs font-bold tracking-[0.02em] text-[#2F7D3C]">
-            HARBORAI ORDERS
-          </div>
+          <div className="inline-flex items-center rounded-full bg-[#EAF5EA] px-3.5 py-1.5 text-xs font-bold tracking-[0.02em] text-[#2F7D3C]"><DashboardText text="HARBORAI ORDERS" /></div>
 
-          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-[#151B2A] md:text-5xl">
-            Aking Orders
-          </h1>
+          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-[#151B2A] md:text-5xl"><DashboardText text="Aking Orders" /></h1>
 
-          <p className="mt-2 text-base text-[#766F64] md:text-lg">
-            Subaybayan ang iyong mga order, delivery, at order details.
-          </p>
+          <p className="mt-2 text-base text-[#766F64] md:text-lg"><DashboardText text="Subaybayan ang iyong mga order, delivery, at order details." /></p>
         </header>
 
         <div className="h-px w-full bg-[#E5E1D8]" />
@@ -380,8 +354,8 @@ export default function Orders() {
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search by order ID"
-                className="h-12 w-full rounded-xl border border-[#E6E0D6] bg-white pl-12 pr-4 text-[15px] text-[#29251F] outline-none transition placeholder:text-[#A29A90] focus:border-[#3A7D44] focus:ring-2 focus:ring-[#3A7D44]/10"
+                placeholder={copy("Search by order ID")}
+                className="h-12 w-full rounded-xl border border-[#E6E0D6] bg-card pl-12 pr-4 text-[15px] text-foreground outline-none transition placeholder:text-[#A29A90] focus:border-[#3A7D44] focus:ring-2 focus:ring-[#3A7D44]/10"
               />
             </div>
 
@@ -389,7 +363,7 @@ export default function Orders() {
               <button
                 type="button"
                 onClick={() => setShowStatusMenu((current) => !current)}
-                className="flex h-12 w-full items-center justify-between rounded-xl border border-[#E6E0D6] bg-white px-4 text-left text-[15px] font-semibold text-[#3B362F] transition hover:border-[#BDB6AA]"
+                className="flex h-12 w-full items-center justify-between rounded-xl border border-[#E6E0D6] bg-card px-4 text-left text-[15px] font-semibold text-[#3B362F] transition hover:border-[#BDB6AA]"
               >
                 <span className="flex items-center gap-3">
                   <SlidersHorizontal
@@ -398,7 +372,7 @@ export default function Orders() {
                   />
                   <span>
                     {statusFilter === 'all'
-                      ? 'All statuses'
+                      ? copy("All statuses")
                       : statusFilter}
                   </span>
                 </span>
@@ -411,7 +385,7 @@ export default function Orders() {
               </button>
 
               {showStatusMenu && (
-                <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-full overflow-hidden rounded-xl border border-[#E5E0D7] bg-white p-1.5 shadow-[0_14px_40px_rgba(45,40,30,0.12)]">
+                <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-full overflow-hidden rounded-xl border border-[#E5E0D7] bg-card p-1.5 shadow-[0_14px_40px_rgba(45,40,30,0.12)]">
                   <button
                     type="button"
                     onClick={() => {
@@ -421,11 +395,9 @@ export default function Orders() {
                     className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition ${
                       statusFilter === 'all'
                         ? 'bg-[#EFF7EF] font-semibold text-[#2F7D3C]'
-                        : 'text-[#514B43] hover:bg-[#F7F5F1]'
+                        : 'text-muted-foreground hover:bg-[#F7F5F1]'
                     }`}
-                  >
-                    All statuses
-                  </button>
+                  ><DashboardText text="All statuses" /></button>
 
                   {statusOptions.map((status) => {
                     const selected =
@@ -442,7 +414,7 @@ export default function Orders() {
                         className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition ${
                           selected
                             ? 'bg-[#EFF7EF] font-semibold text-[#2F7D3C]'
-                            : 'text-[#514B43] hover:bg-[#F7F5F1]'
+                            : 'text-muted-foreground hover:bg-[#F7F5F1]'
                         }`}
                       >
                         {status}
@@ -466,11 +438,9 @@ export default function Orders() {
               className={`relative flex items-center gap-2 px-1 pb-3 pt-1 text-[15px] font-bold transition ${
                 activeTab === 'ongoing'
                   ? 'text-[#2F7D3C]'
-                  : 'text-[#9A9287] hover:text-[#5F594F]'
+                  : 'text-muted-foreground hover:text-[#5F594F]'
               }`}
-            >
-              Ongoing
-              <span
+            ><DashboardText text="Ongoing" /><span
                 className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-bold ${
                   activeTab === 'ongoing'
                     ? 'bg-[#DDEEDC] text-[#2F7D3C]'
@@ -491,11 +461,9 @@ export default function Orders() {
               className={`relative flex items-center gap-2 px-1 pb-3 pt-1 text-[15px] font-bold transition ${
                 activeTab === 'completed'
                   ? 'text-[#2F7D3C]'
-                  : 'text-[#9A9287] hover:text-[#5F594F]'
+                  : 'text-muted-foreground hover:text-[#5F594F]'
               }`}
-            >
-              Completed
-              <span
+            ><DashboardText text="Completed" /><span
                 className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-bold ${
                   activeTab === 'completed'
                     ? 'bg-[#DDEEDC] text-[#2F7D3C]'
@@ -516,7 +484,7 @@ export default function Orders() {
             ERROR
         ========================================================== */}
         {error && (
-          <Card className="mt-6 rounded-2xl border border-red-200 bg-white shadow-none">
+          <Card className="mt-6 rounded-2xl border border-red-200 bg-card shadow-none">
             <CardContent className="p-4">
               <p className="text-sm font-medium text-red-600">{error}</p>
             </CardContent>
@@ -535,7 +503,7 @@ export default function Orders() {
               return (
                 <Card
                   key={order.order_id}
-                  className="overflow-hidden rounded-2xl border border-[#E7E2D9] bg-white shadow-[0_4px_18px_rgba(47,42,32,0.04)]"
+                  className="overflow-hidden rounded-2xl border border-[#E7E2D9] bg-card shadow-[0_4px_18px_rgba(47,42,32,0.04)]"
                 >
                   <CardContent className="p-5 md:p-6">
                     <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
@@ -548,7 +516,7 @@ export default function Orders() {
 
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-base font-extrabold text-[#29251F]">
+                            <h3 className="text-base font-extrabold text-foreground">
                               ORD-{order.order_id}
                             </h3>
 
@@ -559,14 +527,14 @@ export default function Orders() {
                             </span>
                           </div>
 
-                          <div className="mt-2 space-y-1.5 text-sm text-[#756E64]">
+                          <div className="mt-2 space-y-1.5 text-sm text-muted-foreground">
                             {order.details?.map((detail) => (
                               <div
                                 key={detail.order_detail_id}
                                 className="leading-5"
                               >
-                                <span className="font-semibold text-[#514B43]">
-                                  {detail.listing?.product_name ?? 'Product'}
+                                <span className="font-semibold text-muted-foreground">
+                                  {detail.listing?.product_name ?? copy("Product")}
                                 </span>
                                 {' • '}
                                 {detail.quantity}{' '}
@@ -579,19 +547,18 @@ export default function Orders() {
                             ))}
                           </div>
 
-                          <p className="mt-2 text-xs text-[#9A9287]">
-                            Ordered {formatOrderDate(order.order_date)}
+                          <p className="mt-2 text-xs text-muted-foreground"><DashboardText text="Ordered" />{' '}{formatOrderDate(order.order_date)}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex shrink-0 items-center justify-between gap-5 md:flex-col md:items-end">
                         <div className="text-left md:text-right">
-                          <div className="text-xl font-black tracking-tight text-[#29251F]">
+                          <div className="text-xl font-black tracking-tight text-foreground">
                             ₱{formatAmount(order.total_amount)}
                           </div>
 
-                          <div className="mt-1 text-xs text-[#8D857A]">
+                          <div className="mt-1 text-xs text-muted-foreground">
                             {order.payment_status}
                           </div>
                         </div>
@@ -599,11 +566,9 @@ export default function Orders() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="rounded-lg border-[#DCD6CB] bg-white font-semibold text-[#3E3932] hover:bg-[#F7F5F0]"
+                          className="rounded-lg border-[#DCD6CB] bg-card font-semibold text-[#3E3932] hover:bg-[#F7F5F0]"
                           onClick={() => setSelectedOrder(order)}
-                        >
-                          Tingnan ang Detalye
-                        </Button>
+                        ><DashboardText text="Tingnan ang Detalye" /></Button>
                       </div>
                     </div>
                   </CardContent>
@@ -627,15 +592,15 @@ export default function Orders() {
 
             <h2 className="mt-5 text-2xl font-black uppercase tracking-[-0.02em] text-[#5B554D]">
               {searchTerm || statusFilter !== 'all'
-                ? 'No matching orders'
+                ? copy("No matching orders")
                 : activeTab === 'ongoing'
-                  ? 'No ongoing orders'
-                  : 'No completed orders'}
+                  ? copy("No ongoing orders")
+                  : copy("No completed orders")}
             </h2>
 
             <p className="mt-2 max-w-md text-base text-[#9B9184]">
               {searchTerm || statusFilter !== 'all'
-                ? 'Try changing your search or status filter.'
+                ? copy("Try changing your search or status filter.")
                 : activeEmptyMessage}
             </p>
 
@@ -652,9 +617,7 @@ export default function Orders() {
                     )
                   }
                   className="group mt-2 inline-flex items-center gap-1 font-bold text-[#2F7D3C] underline decoration-2 underline-offset-4 transition hover:text-[#256431]"
-                >
-                  market cart
-                  <ArrowRight
+                ><DashboardText text="market cart" /><ArrowRight
                     className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
                   />
                 </button>
@@ -671,59 +634,50 @@ export default function Orders() {
         >
           <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl font-black text-[#151B2A]">
-                Order Details -{' '}
+              <DialogTitle className="text-xl font-black text-[#151B2A]"><DashboardText text="Order Details -" />{' '}
                 {selectedOrder ? `ORD-${selectedOrder.order_id}` : ''}
               </DialogTitle>
 
-              <DialogDescription>
-                Kumpletong impormasyon tungkol sa order na ito
-              </DialogDescription>
+              <DialogDescription><DashboardText text="Kumpletong impormasyon tungkol sa order na ito" /></DialogDescription>
             </DialogHeader>
 
             {selectedOrder && (
               <div className="space-y-6">
                 {/* Order Information + Payment */}
                 <div className="grid gap-6 md:grid-cols-2">
-                  <div className="rounded-xl bg-[#F8F7F3] p-4">
-                    <h4 className="mb-3 font-bold text-[#29251F]">
-                      Impormasyon ng Order
-                    </h4>
+                  <div className="rounded-xl bg-card p-4">
+                    <h4 className="mb-3 font-bold text-foreground"><DashboardText text="Impormasyon ng Order" /></h4>
 
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between gap-4">
-                        <span className="text-[#756E64]">Order ID:</span>
-                        <span className="font-semibold text-[#29251F]">
+                        <span className="text-muted-foreground"><DashboardText text="Order ID:" /></span>
+                        <span className="font-semibold text-foreground">
                           ORD-{selectedOrder.order_id}
                         </span>
                       </div>
 
                       <div className="flex justify-between gap-4">
-                        <span className="text-[#756E64]">Petsa ng Order:</span>
-                        <span className="font-semibold text-right text-[#29251F]">
+                        <span className="text-muted-foreground"><DashboardText text="Petsa ng Order:" /></span>
+                        <span className="font-semibold text-right text-foreground">
                           {formatOrderDate(selectedOrder.order_date)}
                         </span>
                       </div>
 
                       <div className="flex justify-between gap-4">
-                        <span className="text-[#756E64]">
-                          Shipping Address:
-                        </span>
-                        <span className="max-w-[250px] text-right font-semibold text-[#29251F]">
+                        <span className="text-muted-foreground"><DashboardText text="Shipping Address:" /></span>
+                        <span className="max-w-[250px] text-right font-semibold text-foreground">
                           {selectedOrder.shipping_address ?? 'N/A'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-[#F8F7F3] p-4">
-                    <h4 className="mb-3 font-bold text-[#29251F]">
-                      Status at Payment
-                    </h4>
+                  <div className="rounded-xl bg-card p-4">
+                    <h4 className="mb-3 font-bold text-foreground"><DashboardText text="Status at Payment" /></h4>
 
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-[#756E64]">Status ng Order:</span>
+                        <span className="text-muted-foreground"><DashboardText text="Status ng Order:" /></span>
 
                         <span
                           className={`rounded-full border px-2.5 py-1 text-xs font-bold ${
@@ -736,16 +690,14 @@ export default function Orders() {
                       </div>
 
                       <div className="flex justify-between gap-4">
-                        <span className="text-[#756E64]">Payment:</span>
-                        <span className="font-semibold text-[#29251F]">
+                        <span className="text-muted-foreground"><DashboardText text="Payment:" /></span>
+                        <span className="font-semibold text-foreground">
                           {selectedOrder.payment_status}
                         </span>
                       </div>
 
                       <div className="flex justify-between gap-4 border-t border-[#E2DED6] pt-3">
-                        <span className="text-[#756E64]">
-                          Kabuuang Halaga:
-                        </span>
+                        <span className="text-muted-foreground"><DashboardText text="Kabuuang Halaga:" /></span>
 
                         <span className="text-lg font-black text-[#2F7D3C]">
                           ₱{formatAmount(selectedOrder.total_amount)}
@@ -757,29 +709,25 @@ export default function Orders() {
 
                 {/* Ordered Products */}
                 <div className="border-t border-[#E6E1D8] pt-5">
-                  <h4 className="mb-3 font-bold text-[#29251F]">
-                    Mga Na-order na Produkto
-                  </h4>
+                  <h4 className="mb-3 font-bold text-foreground"><DashboardText text="Mga Na-order na Produkto" /></h4>
 
                   <div className="space-y-3">
                     {selectedOrder.details?.map((detail) => (
                       <div
                         key={detail.order_detail_id}
-                        className="rounded-xl border border-[#E6E1D8] bg-white p-4"
+                        className="rounded-xl border border-[#E6E1D8] bg-card p-4"
                       >
                         <div className="flex flex-col justify-between gap-3 sm:flex-row">
                           <div>
-                            <p className="font-semibold text-[#29251F]">
-                              {detail.listing?.product_name ?? 'Product'}
+                            <p className="font-semibold text-foreground">
+                              {detail.listing?.product_name ?? copy("Product")}
                             </p>
 
-                            <p className="mt-1 text-sm text-[#756E64]">
-                              Producer:{' '}
+                            <p className="mt-1 text-sm text-muted-foreground"><DashboardText text="Producer:" />{' '}
                               {getProducerName(detail.listing?.producer)}
                             </p>
 
-                            <p className="mt-1 text-sm text-[#756E64]">
-                              Quantity: {detail.quantity}{' '}
+                            <p className="mt-1 text-sm text-muted-foreground"><DashboardText text="Quantity:" />{' '}{detail.quantity}{' '}
                               {detail.listing?.unit_of_measure ??
                                 detail.listing?.unit ??
                                 ''}
@@ -787,13 +735,12 @@ export default function Orders() {
                           </div>
 
                           <div className="text-left sm:text-right">
-                            <p className="font-semibold text-[#29251F]">
+                            <p className="font-semibold text-foreground">
                               ₱{formatAmount(detail.subtotal)}
                             </p>
 
-                            <p className="mt-1 text-sm text-[#8D857A]">
-                              ₱{formatAmount(detail.unit_price)} per unit
-                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              ₱{formatAmount(detail.unit_price)}{' '}<DashboardText text="per unit" /></p>
                           </div>
                         </div>
                       </div>
@@ -803,15 +750,12 @@ export default function Orders() {
 
                 {/* Timeline */}
                 <div className="border-t border-[#E6E1D8] pt-5">
-                  <h4 className="mb-4 font-bold text-[#29251F]">
-                    Order Timeline
-                  </h4>
+                  <h4 className="mb-4 font-bold text-foreground"><DashboardText text="Order Timeline" /></h4>
 
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="h-3 w-3 rounded-full bg-[#2F7D3C]" />
-                      <span className="text-sm text-[#514B43]">
-                        Order placed on {formatOrderDate(selectedOrder.order_date)}
+                      <span className="text-sm text-muted-foreground"><DashboardText text="Order placed on" />{' '}{formatOrderDate(selectedOrder.order_date)}
                       </span>
                     </div>
 
@@ -819,9 +763,7 @@ export default function Orders() {
                       'confirmed' && (
                       <div className="flex items-center gap-3">
                         <div className="h-3 w-3 rounded-full bg-blue-500" />
-                        <span className="text-sm text-[#514B43]">
-                          Order accepted and processing
-                        </span>
+                        <span className="text-sm text-muted-foreground"><DashboardText text="Order accepted and processing" /></span>
                       </div>
                     )}
 
@@ -830,9 +772,7 @@ export default function Orders() {
                     ) && (
                       <div className="flex items-center gap-3">
                         <div className="h-3 w-3 rounded-full bg-violet-500" />
-                        <span className="text-sm text-[#514B43]">
-                          Order shipped
-                        </span>
+                        <span className="text-sm text-muted-foreground"><DashboardText text="Order shipped" /></span>
                       </div>
                     )}
 
@@ -840,9 +780,7 @@ export default function Orders() {
                       'delivered' && (
                       <div className="flex items-center gap-3">
                         <div className="h-3 w-3 rounded-full bg-[#2F7D3C]" />
-                        <span className="text-sm text-[#514B43]">
-                          Order delivered successfully
-                        </span>
+                        <span className="text-sm text-muted-foreground"><DashboardText text="Order delivered successfully" /></span>
                       </div>
                     )}
                   </div>

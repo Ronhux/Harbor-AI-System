@@ -13,6 +13,7 @@ class Producer extends Model
 
     protected $fillable = [
         'user_id',
+        'registered_producer_id',
         'rsbsa_number',
         'location',
         'primary_product_type',
@@ -34,6 +35,11 @@ class Producer extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    public function registeredProducer()
+    {
+        return $this->belongsTo(RegisteredProducer::class, 'registered_producer_id', 'registry_id');
     }
 
     public function productListings()

@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -81,6 +82,7 @@ function ContextMenuSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.SubContent>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <ContextMenuPrimitive.SubContent
       data-slot="context-menu-sub-content"
@@ -89,7 +91,7 @@ function ContextMenuSubContent({
         className,
       )}
       {...props}
-    />
+    data-harbor-dashboard-theme={portalTheme} />
   );
 }
 
@@ -97,6 +99,7 @@ function ContextMenuContent({
   className,
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Content>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
@@ -106,7 +109,7 @@ function ContextMenuContent({
           className,
         )}
         {...props}
-      />
+      data-harbor-dashboard-theme={portalTheme} />
     </ContextMenuPrimitive.Portal>
   );
 }

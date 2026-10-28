@@ -12,11 +12,11 @@ return new class extends Migration
 
             $table->increments('order_detail_id');
 
-            // Must match orders.order_id INT(11)
-            $table->integer('order_id');
+            // Must match orders.order_id UNSIGNED INT
+            $table->unsignedInteger('order_id');
 
-            // Must match product_listings.listing_id INT(11)
-            $table->integer('listing_id');
+            // Must match product_listings.listing_id UNSIGNED BIGINT
+            $table->unsignedBigInteger('listing_id');
 
             $table->decimal('quantity', 12, 2)
                 ->default(0.00);

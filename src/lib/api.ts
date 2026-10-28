@@ -2,14 +2,15 @@ type ReqOptions = {
   method?: string;
   body?: any;
   headers?: Record<string, string>;
+  signal?: AbortSignal;
 };
 
 let _csrfFetched = false;
 
-async function ensureCsrf() {
+async function ensureCsrf(signal?: AbortSignal) {
   if (_csrfFetched) return;
   try {
-    await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
+    await fetch('/sanctum/csrf-cookie', { credentials: 'include', signal });
     _csrfFetched = true;
   } catch (e) {
     // ignore
@@ -21,7 +22,7 @@ export async function request(path: string, opts: ReqOptions = {}) {
   const headers: Record<string, string> = { Accept: 'application/json', ...(opts.headers || {}) };
 
   if (method !== 'GET') {
-    await ensureCsrf();
+    await ensureCsrf(opts.signal);
     // read XSRF-TOKEN cookie and set header for fetch (Laravel expects X-XSRF-TOKEN)
     try {
       const getCookie = (name: string) => {
@@ -56,16 +57,34 @@ export async function request(path: string, opts: ReqOptions = {}) {
     body = JSON.stringify(opts.body);
   }
 
-  const res = await fetch(path, { method, headers, body, credentials: 'include' });
+  const res = await fetch(path, { method, headers, body, credentials: 'include', signal: opts.signal });
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('application/json')) {
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.message || JSON.stringify(data));
+    let data:any;
+    try { data = await res.json(); }
+    catch {
+      const error=new Error('The service returned an unreadable response. Please try again.') as Error & {status?:number};
+      error.status=res.status;throw error;
+    }
+    if (!res.ok) {
+      const error = new Error(res.status >= 500 ? 'The service is temporarily unavailable. Please try again.' : data?.message || `Request failed: ${res.status}`) as Error & { status?: number; errors?: Record<string, string[]> };
+      error.status = res.status;
+      if(res.status < 500) error.errors = data?.errors;
+      throw error;
+    }
     return data;
   }
 
+  if(res.ok && res.status!==204 && path.startsWith('/api/')){
+    const error=new Error('The service returned an unexpected response. Please refresh and try again.') as Error & {status?:number};
+    error.status=res.status;throw error;
+  }
   const text = await res.text();
-  if (!res.ok) throw new Error(text || `Request failed: ${res.status}`);
+  if (!res.ok) {
+    const error = new Error(`Request failed: ${res.status}`) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
   return text;
 }
 

@@ -6,6 +6,9 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\ProductListing;
 use App\Models\Buyer;
+use App\Models\Negotiation;
+use App\Models\Producer;
+use App\Models\TransactionNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -20,8 +23,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        // Get buyer through relationship
-        $buyer = $user->buyer;
+        $buyer = Buyer::where('user_id', $user->user_id)->first();
 
         if (!$buyer) {
             Log::warning('No buyer found for user', [
@@ -32,11 +34,11 @@ class OrderController extends Controller
             return response()->json([
                 'message' => 'Buyer account not found.',
                 'orders' => []
-            ], 200);
+            ], 403);
         }
 
         $orders = Order::with([
-            'details.listing.producer'
+            'details.listing.producer.user', 'negotiation'
         ])
         ->where('buyer_id', $buyer->buyer_id)
         ->orderBy('order_date', 'desc')
@@ -50,143 +52,157 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'listing_id' => 'required|integer|exists:product_listings,listing_id',
-            'quantity' => 'required|numeric|min:0.01',
-            'shipping_address' => 'required|string|max:500',
-            'delivery_date' => 'required|date',
+        $buyerUser = $request->user();
+        abort_unless($buyerUser, 401);
+
+        $buyer = Buyer::where('user_id', $buyerUser->user_id)->first();
+        abort_unless($buyer, 403, 'Buyer account not found.');
+
+        $data = $request->validate([
+            'negotiation_id' => 'nullable|integer|exists:negotiations,id',
+            'listing_id' => 'nullable|integer|exists:product_listings,listing_id',
+            'quantity' => 'nullable|numeric|min:0.001',
+            'shipping_address' => 'nullable|string|max:500',
+            'delivery_date' => 'nullable|date|after_or_equal:today',
         ]);
 
-        if ($validator->fails()) {
-            Log::error('Order validation failed', [
-                'errors' => $validator->errors(),
-                'input' => $request->all(),
-            ]);
-            
-            return response()->json([
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors()
-            ], 422);
+        $negotiation = null;
+
+        if (!empty($data['negotiation_id'])) {
+            $negotiation = Negotiation::with('listing')->whereKey($data['negotiation_id'])->firstOrFail();
+            abort_unless((int) $negotiation->buyer_id === (int) $buyer->buyer_id, 403, 'This negotiation belongs to another buyer.');
+        } else {
+            $listingId = $data['listing_id'] ?? null;
+            abort_unless($listingId, 422, 'A listing_id is required to create an order.');
+
+            $negotiation = Negotiation::with('listing')
+                ->where('buyer_id', $buyer->buyer_id)
+                ->where('listing_id', $listingId)
+                ->where('status', 'Agreement Confirmed')
+                ->latest('updated_at')
+                ->first();
         }
 
-        try {
-            $user = $request->user();
+        abort_unless(
+            $negotiation && $negotiation->status === 'Agreement Confirmed' && is_array($negotiation->agreement_snapshot),
+            409,
+            'Orders can only be submitted from a mutually confirmed negotiation. Contact the producer, record proposed terms, and wait for both confirmations.'
+        );
 
-            if (!$user) {
-                Log::warning('Order creation attempted without authentication');
-                
-                return response()->json([
-                    'message' => 'Unauthenticated.'
-                ], 401);
+        $terms = $negotiation->agreement_snapshot;
+        $requestedQuantity = (float) ($terms['quantity'] ?? 0);
+        abort_if($requestedQuantity <= 0, 422, 'The confirmed negotiation does not have a valid order quantity.');
+
+        if (array_key_exists('quantity', $data) && (float) $data['quantity'] !== $requestedQuantity) {
+            abort(422, 'The order quantity must match the confirmed negotiation terms.');
+        }
+
+        if (!empty($data['delivery_date'])) {
+            $terms['delivery_date'] = $data['delivery_date'];
+        }
+
+        if (!empty($data['shipping_address'])) {
+            $terms['delivery_arrangement'] = $data['shipping_address'];
+        }
+
+        $order = DB::transaction(function () use ($negotiation, $buyer, $data, $requestedQuantity, $terms) {
+            $locked = Negotiation::whereKey($negotiation->id)->lockForUpdate()->firstOrFail();
+            $existing = Order::where('negotiation_id', $locked->id)->first();
+            if ($existing) {
+                $updated = false;
+
+                if (!empty($data['shipping_address']) && empty($existing->shipping_address)) {
+                    $existing->shipping_address = $data['shipping_address'];
+                    $updated = true;
+                }
+
+                if (!empty($data['delivery_date']) && empty($existing->delivery_date)) {
+                    $existing->delivery_date = $data['delivery_date'];
+                    $updated = true;
+                }
+
+                if ($updated) {
+                    $existing->save();
+                }
+
+                return $existing;
             }
 
-            // Find buyer connected to logged-in user
-            $buyer = Buyer::where('user_id', $user->user_id)->first();
+            $listing = ProductListing::where('listing_id', $locked->listing_id)->lockForUpdate()->firstOrFail();
+            $available = (float) ($listing->quantity_available ?? $listing->quantity ?? 0);
+            $futureSupplyDate = $locked->supplyOffer?->availability_date;
+            $futureSupply = $futureSupplyDate && $futureSupplyDate->isFuture();
+            abort_if($available < $requestedQuantity && ! $futureSupply, 422, 'The product no longer has enough available quantity.');
 
-            if (!$buyer) {
-                Log::warning('Buyer not found for user', [
-                    'user_id' => $user->user_id,
-                ]);
-                
-                return response()->json([
-                    'message' => 'Buyer account not found.'
-                ], 404);
-            }
-
-            // Find product listing
-            $listing = ProductListing::where(
-                'listing_id',
-                $request->listing_id
-            )->first();
-
-            if (!$listing) {
-                Log::warning('Product listing not found', [
-                    'listing_id' => $request->listing_id,
-                ]);
-                
-                return response()->json([
-                    'message' => 'Product listing not found.'
-                ], 404);
-            }
-
-            // Check available quantity
-            if (
-                $listing->quantity_available !== null &&
-                $request->quantity > $listing->quantity_available
-            ) {
-                return response()->json([
-                    'message' => 'Insufficient product quantity available.',
-                    'available_quantity' => $listing->quantity_available
-                ], 422);
-            }
-
-            // Determine price
-            $unitPrice = $listing->current_price_per_unit
-                ?? $listing->price_per_unit
-                ?? 0;
-
-            $quantity = (float) $request->quantity;
-            $totalPrice = $unitPrice * $quantity;
-
-            // Create order - using total_amount field as per database schema
+            $shippingAddress = $data['shipping_address'] ?? ($terms['delivery_arrangement'] ?? null);
             $order = Order::create([
                 'buyer_id' => $buyer->buyer_id,
+                'negotiation_id' => $locked->id,
                 'order_date' => now()->toDateString(),
-                'total_amount' => $totalPrice,
-                'shipping_address' => $request->shipping_address,
-                'fulfillment_status' => 'Confirmed',
+                'delivery_date' => $terms['delivery_date'] ?? ($data['delivery_date'] ?? null),
+                'total_amount' => $terms['total'] ?? ($requestedQuantity * ($terms['unit_price'] ?? 0)),
+                'shipping_address' => $shippingAddress,
+                'fulfillment_status' => 'Order Submitted',
                 'payment_status' => 'Pending',
             ]);
 
-            Log::info('Order created successfully', [
-                'order_id' => $order->order_id,
-                'buyer_id' => $buyer->buyer_id,
-                'listing_id' => $listing->listing_id,
-            ]);
-
-            // Create order detail
-            $orderDetail = OrderDetail::create([
+            OrderDetail::create([
                 'order_id' => $order->order_id,
                 'listing_id' => $listing->listing_id,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'subtotal' => $totalPrice,
+                'quantity' => $requestedQuantity,
+                'unit_price' => $terms['unit_price'] ?? ($listing->current_price_per_unit ?? $listing->price_per_unit ?? 0),
+                'subtotal' => ($requestedQuantity * ($terms['unit_price'] ?? ($listing->current_price_per_unit ?? $listing->price_per_unit ?? 0))),
             ]);
 
-            // Reduce available product quantity
-            if ($listing->quantity_available !== null) {
-                $listing->quantity_available =
-                    $listing->quantity_available - $quantity;
+            $producerUserId = Producer::find($locked->producer_id)?->user_id;
+            if ($producerUserId) {
+                TransactionNotification::create([
+                    'recipient_user_id' => $producerUserId,
+                    'negotiation_id' => $locked->id,
+                    'order_id' => $order->order_id,
+                    'title' => 'Official order submitted',
+                    'body' => 'Order #' . $order->order_id . ' was created from ' . $locked->reference . ' and is waiting for your acceptance.',
+                ]);
+            }
 
+            TransactionNotification::create([
+                'recipient_user_id' => $buyerUser->user_id,
+                'negotiation_id' => $locked->id,
+                'order_id' => $order->order_id,
+                'title' => 'Official order submitted',
+                'body' => 'Order #' . $order->order_id . ' is now in Orders and is waiting for producer acceptance.',
+            ]);
+
+            if (! $futureSupply) {
+                if ($listing->quantity_available !== null) {
+                    $listing->quantity_available = max(0, $available - $requestedQuantity);
+                }
+                if ($listing->quantity !== null) {
+                    $listing->quantity = max(0, (float) $listing->quantity - $requestedQuantity);
+                }
                 $listing->save();
             }
 
-            return response()->json([
-                'message' => 'Order placed successfully.',
-                'order' => $order,
-                'order_detail' => $orderDetail,
-            ], 201);
+            return $order;
+        });
 
-        } catch (\Exception $e) {
-
-            Log::error('Order creation failed', [
-                'error' => $e->getMessage(),
-                'user_id' => optional($request->user())->user_id,
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'message' => 'Failed to place order.',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Official order submitted.',
+            'order' => $order->load(['details.listing', 'negotiation']),
+        ], 201);
     }
 
     public function show($orderId)
     {
         $order = Order::with([
-            'details.listing.producer'
+            'details.listing.producer', 'negotiation'
         ])->findOrFail($orderId);
+
+        $user = request()->user();
+        $buyer = Buyer::where('user_id', $user->user_id)->first();
+        $producer = \App\Models\Producer::where('user_id', $user->user_id)->first();
+        $producerOwnsOrder = $producer && $order->details()->whereHas('listing', fn ($q) => $q->where('producer_id', $producer->producer_id))->exists();
+        abort_unless(($buyer && (int) $order->buyer_id === (int) $buyer->buyer_id) || $producerOwnsOrder, 403);
 
         return response()->json($order);
     }

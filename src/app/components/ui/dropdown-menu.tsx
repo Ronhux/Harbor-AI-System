@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -36,6 +37,7 @@ function DropdownMenuContent({
   sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
@@ -46,7 +48,7 @@ function DropdownMenuContent({
           className,
         )}
         {...props}
-      />
+      data-harbor-dashboard-theme={portalTheme} />
     </DropdownMenuPrimitive.Portal>
   );
 }
@@ -226,6 +228,7 @@ function DropdownMenuSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
@@ -234,7 +237,7 @@ function DropdownMenuSubContent({
         className,
       )}
       {...props}
-    />
+    data-harbor-dashboard-theme={portalTheme} />
   );
 }
 

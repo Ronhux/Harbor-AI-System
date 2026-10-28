@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'azure_openai' => [
+        'enabled' => env('AZURE_OPENAI_ENABLED', false),
+        'endpoint' => env('AZURE_OPENAI_ENDPOINT'),
+        'api_key' => env('AZURE_OPENAI_API_KEY'),
+        'deployment' => env('AZURE_OPENAI_DEPLOYMENT', 'gpt-5-mini'),
+    ],
+
 ];

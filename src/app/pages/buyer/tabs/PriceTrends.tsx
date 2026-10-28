@@ -1,486 +1,288 @@
-import {
-  ArrowDown,
-  ArrowUp,
-  BarChart3,
-  BookOpen,
-  CalendarDays,
-  ChevronDown,
-  Fish,
-  Info,
-  Leaf,
-  Lightbulb,
-  LineChart as LineChartIcon,
-  Sprout,
-  TrendingUp,
-  Users,
-  Wheat,
-} from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../../../components/ui/card';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+import { DashboardText, useDashboardCopy } from '../../../i18n/DashboardCopy';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { BarChart3, CalendarDays, MapPin, Package, RefreshCw } from 'lucide-react';
+import { request } from '../../../../lib/api';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 
-type ProductKey = 'rice' | 'corn' | 'fish' | 'vegetables';
-
-type ProductConfig = {
-  key: ProductKey;
-  name: string;
-  current: number;
-  previous: number;
-  color: string;
-  bg: string;
-  border: string;
-  icon: React.ElementType;
+type Listing = {
+  listing_id: number;
+  product_name: string;
+  product_category?: string;
+  category?: string;
+  current_price_per_unit?: number;
+  price_per_unit?: number;
+  unit_of_measure?: string;
+  unit?: string;
+  quantity_available?: number;
+  quantity?: number;
+  location?: string;
+  producer?: { name?: string; location?: string };
 };
 
-const priceData = [
-  { month: 'Jul', rice: 115, corn: 38, fish: 162, vegetables: 54 },
-  { month: 'Aug', rice: 118, corn: 40, fish: 168, vegetables: 56 },
-  { month: 'Sep', rice: 121, corn: 42, fish: 175, vegetables: 59 },
-  { month: 'Oct', rice: 124, corn: 44, fish: 181, vegetables: 62 },
-  { month: 'Nov', rice: 128, corn: 47, fish: 189, vegetables: 66 },
-];
+type ReferenceSummary = {
+  status: string;
+  source?: string | null;
+  source_name?: string | null;
+  geography?: string | null;
+  price_type?: string | null;
+  currency?: string | null;
+  unit?: string | null;
+  observation_count: number;
+  minimum_price?: number | null;
+  maximum_price?: number | null;
+  average_price?: number | null;
+  first_observation_date?: string | null;
+  latest_available_observation?: { date?: string | null; period?: string | null; price?: number | null } | null;
+};
 
-const products: ProductConfig[] = [
-  {
-    key: 'rice',
-    name: 'Rice',
-    current: 128,
-    previous: 115,
-    color: '#16A05A',
-    bg: 'bg-[#EAF8EF]',
-    border: 'border-[#BFE7CE]',
-    icon: Wheat,
-  },
-  {
-    key: 'corn',
-    name: 'Corn',
-    current: 47,
-    previous: 38,
-    color: '#F59E0B',
-    bg: 'bg-[#FFF6E5]',
-    border: 'border-[#F6D69A]',
-    icon: Sprout,
-  },
-  {
-    key: 'fish',
-    name: 'Fish',
-    current: 189,
-    previous: 163,
-    color: '#1298D4',
-    bg: 'bg-[#EAF6FD]',
-    border: 'border-[#B9E1F5]',
-    icon: Fish,
-  },
-  {
-    key: 'vegetables',
-    name: 'Vegetables',
-    current: 66,
-    previous: 54,
-    color: '#0F9488',
-    bg: 'bg-[#EDF8F3]',
-    border: 'border-[#C4E5D4]',
-    icon: Leaf,
-  },
-];
+type ListingComparison = {
+  seasonality?: {analysis_month_name?: string; interpretation?: string; geographic_limitation?: string};
+  listing_id: number;
+  status: string;
+  commodity_resolution: { canonical_name?: string | null; candidates?: Array<{ canonical_name: string }> };
+  comparison: { status: string; normalized_listing_price?: number | null; unit?: string | null };
+  reference: ReferenceSummary;
+  reference_candidates: Array<{ commodity_label: string; reference: ReferenceSummary }>;
+};
 
-const percentChange = (current: number, previous: number) =>
-  ((current - previous) / previous) * 100;
+const categoryOf = (listing: Listing) => listing.product_category || listing.category || 'General';
+const unitOf = (listing: Listing) => listing.unit_of_measure || listing.unit || 'unit';
+const money = (value: number | null | undefined) => value == null || !Number.isFinite(value)
+  ? 'Not available'
+  : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 }).format(value);
 
-const formatPrice = (value: number) => `₱${value}/kg`;
-
-function ProductIcon({ product, size = 'md' }: { product: ProductConfig; size?: 'sm' | 'md' }) {
-  const Icon = product.icon;
+function ReferenceCard({ label, reference }: { label: string; reference: ReferenceSummary }) {
+  const copy = useDashboardCopy();
+  const latest = reference.latest_available_observation;
+  const hasObservations = reference.observation_count > 0 && reference.average_price != null;
+  const firstPeriod = reference.first_observation_date || 'Not reported';
+  const latestPeriod = latest?.period || latest?.date || 'Not reported';
 
   return (
-    <div
-      className={`flex shrink-0 items-center justify-center rounded-2xl ${product.bg} ${
-        size === 'sm' ? 'h-11 w-11' : 'h-16 w-16'
-      }`}
-      style={{ color: product.color }}
-    >
-      <Icon className={size === 'sm' ? 'h-6 w-6' : 'h-8 w-8'} strokeWidth={2} />
-    </div>
-  );
-}
-
-function ChangeValue({ value }: { value: number }) {
-  const isPositive = value >= 0;
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 font-bold ${
-        isPositive ? 'text-[#16A05A]' : 'text-red-500'
-      }`}
-    >
-      {isPositive ? (
-        <ArrowUp className="h-5 w-5" strokeWidth={3} />
+    <article className="min-w-0 rounded-lg border border-border bg-card p-3">
+      <h4 className="break-words font-semibold text-foreground">{copy(label)}</h4>
+      {hasObservations ? (
+        <dl className="mt-3 grid min-w-0 gap-x-4 gap-y-3 sm:grid-cols-2">
+          <div className="min-w-0">
+            <dt className="text-xs font-medium text-muted-foreground"><DashboardText text="Latest available PSA Region II farmgate reference" /></dt>
+            <dd className="mt-1 break-words font-bold text-foreground">
+              {money(latest?.price)} / {reference.unit || 'PHP/kg'}
+            </dd>
+            <dd className="text-xs text-muted-foreground">{latestPeriod}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-medium text-muted-foreground"><DashboardText text="Historical range" /></dt>
+            <dd className="mt-1 break-words font-semibold text-foreground">
+              {money(reference.minimum_price)} – {money(reference.maximum_price)} / {reference.unit || 'PHP/kg'}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-medium text-muted-foreground"><DashboardText text="Historical average" /></dt>
+            <dd className="mt-1 break-words font-semibold text-foreground">
+              {money(reference.average_price)} / {reference.unit || 'PHP/kg'}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-medium text-muted-foreground"><DashboardText text="Reference period and observations" /></dt>
+            <dd className="mt-1 break-words text-muted-foreground">
+              {firstPeriod} – {latestPeriod}
+            </dd>
+            <dd className="text-xs text-muted-foreground">{reference.observation_count}{' '}<DashboardText text="monthly observations" /></dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-medium text-muted-foreground"><DashboardText text="Source" /></dt>
+            <dd className="mt-1 break-words text-muted-foreground">{reference.source || reference.source_name || copy("Official reference")}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-medium text-muted-foreground"><DashboardText text="Geographic basis" /></dt>
+            <dd className="mt-1 break-words text-muted-foreground">{reference.geography || copy("Not reported")}</dd>
+          </div>
+        </dl>
       ) : (
-        <ArrowDown className="h-5 w-5" strokeWidth={3} />
+        <p className="mt-2 text-sm text-muted-foreground"><DashboardText text="No verified PSA observations are available for this series." /></p>
       )}
-      {Math.abs(value).toFixed(1)}%
-    </span>
-  );
-}
-
-function SelectControl({
-  icon: Icon,
-  children,
-  className = '',
-}: {
-  icon: React.ElementType;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      className={`flex h-14 min-w-[260px] items-center justify-between gap-4 rounded-xl border border-[#D7DEE7] bg-white px-5 text-left shadow-sm transition hover:border-[#9BB4C9] ${className}`}
-    >
-      <span className="flex items-center gap-3">
-        <Icon className="h-6 w-6 text-[#123C5C]" />
-        <span className="font-semibold text-[#123C5C]">{children}</span>
-      </span>
-      <ChevronDown className="h-5 w-5 text-[#123C5C]" />
-    </button>
-  );
-}
-
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-
-  return (
-    <div className="rounded-xl border border-[#D7DEE7] bg-white px-4 py-3 shadow-lg">
-      <p className="mb-2 font-bold text-[#123C5C]">{label}</p>
-      <div className="space-y-1.5">
-        {payload.map((entry: any) => {
-          const product = products.find((item) => item.key === entry.dataKey);
-          return (
-            <div key={entry.dataKey} className="flex min-w-[150px] items-center justify-between gap-5 text-sm">
-              <span className="flex items-center gap-2 text-[#45586B]">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: entry.color }}
-                />
-                {product?.name ?? entry.dataKey}
-              </span>
-              <span className="font-bold text-[#123C5C]">₱{entry.value}/kg</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    </article>
   );
 }
 
 export default function PriceTrends() {
+  const copy = useDashboardCopy();
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [comparisons, setComparisons] = useState<Record<number, ListingComparison>>({});
+  const [category, setCategory] = useState('All categories');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [referenceError, setReferenceError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    setReferenceError('');
+    setComparisons({});
+    let productsLoaded = false;
+    try {
+      const result = await request('/api/buyer/products');
+      const currentListings = Array.isArray(result?.data) ? result.data as Listing[] : [];
+      productsLoaded = true;
+      setListings(currentListings);
+
+      const nextComparisons: Record<number, ListingComparison> = {};
+      for (let index = 0; index < currentListings.length; index += 25) {
+        const listingIds = currentListings.slice(index, index + 25).map((listing) => listing.listing_id);
+        const response = await request('/api/buyer/price-trends/references', {
+          method: 'POST',
+          body: { listing_ids: listingIds },
+        });
+        for (const comparison of (response?.data ?? []) as ListingComparison[]) {
+          nextComparisons[comparison.listing_id] = comparison;
+        }
+        setComparisons({ ...nextComparisons });
+      }
+    } catch (failure: any) {
+      if (!productsLoaded) {
+        setError(failure?.message || 'Could not load current listing prices.');
+        setListings([]);
+      } else {
+        setReferenceError(failure?.message || 'Reference comparisons could not be loaded. Current listing prices remain available.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const categories = useMemo(() => ['All categories', ...Array.from(new Set(listings.map(categoryOf))).sort((a, b) => a.localeCompare(b))], [listings]);
+  const visibleListings = useMemo(
+    () => listings.filter((listing) => category === 'All categories' || categoryOf(listing) === category),
+    [listings, category],
+  );
+
   return (
     <div className="min-h-full bg-[#F8F7F1] p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1500px] space-y-5">
-        {/* HEADER */}
-        <header className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#E7F7EC] text-[#16A05A]">
-              <BarChart3 className="h-9 w-9" strokeWidth={2.5} />
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#E7F7EC] text-[#16A05A] sm:h-16 sm:w-16">
+              <BarChart3 className="h-8 w-8 sm:h-9 sm:w-9" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="font-display text-4xl font-bold tracking-tight text-[#123C5C] sm:text-5xl">
-                Price Trends
-              </h1>
-              <p className="mt-1 max-w-3xl text-sm text-[#123C5C] sm:text-base">
-                Subaybayan ang market price trends mula July hanggang November para sa strategic planning.
-              </p>
+              <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl"><DashboardText text="Listing Prices & PSA Reference" /></h1>
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground sm:text-base"><DashboardText text="Asking prices and availability from verified producers’ active listings, shown alongside verified PSA Region II / Cagayan Valley farmgate reference data where available." /></p>
             </div>
           </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <SelectControl icon={CalendarDays} className="w-full sm:w-[260px]">
-              July - November 2026
-            </SelectControl>
-            <SelectControl icon={LineChartIcon} className="w-full sm:w-[330px]">
-              All Products
-            </SelectControl>
-          </div>
+          <label className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-[#D7DEE7] bg-card px-4 shadow-sm sm:w-auto">
+            <CalendarDays className="h-5 w-5 shrink-0 text-foreground" />
+            <span className="sr-only"><DashboardText text="Filter listing prices by category" /></span>
+            <select aria-label={copy("Filter listing prices by category")} value={category} onChange={(event) => setCategory(event.target.value)} className="min-h-12 min-w-0 flex-1 bg-transparent font-semibold text-foreground outline-none sm:min-w-48">
+              {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
         </header>
 
-        {/* TOP PRODUCT CARDS */}
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          {products.map((product) => {
-            const change = percentChange(product.current, product.previous);
-            return (
-              <Card
-                key={product.key}
-                className={`border ${product.border} bg-white shadow-sm`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <ProductIcon product={product} />
-                    <div className="min-w-0">
-                      <p className="font-bold text-[#123C5C]">{product.name}</p>
-                      <p className="mt-1 text-xl font-bold text-[#123C5C] sm:text-2xl">
-                        {formatPrice(product.current)}
-                      </p>
-                      <div className="mt-1 flex items-center gap-2 text-sm">
-                        <ChangeValue value={change} />
+        <Card className="border-[#DDE3E8] bg-card shadow-sm">
+          <CardHeader className="border-b border-border/70">
+            <CardTitle className="text-xl text-foreground sm:text-2xl"><DashboardText text="Available market listings" /></CardTitle>
+            <CardDescription><DashboardText text="Each listing shows its own producer, price and unit. PSA OpenSTAT references, when available, are shown separately as historical regional farmgate observations." /></CardDescription>
+          </CardHeader>
+          <div className="mx-4 mb-1 rounded-lg border border-[#D8E8F0] bg-[#F3FAFD] p-3 text-xs leading-5 text-muted-foreground sm:mx-6"><DashboardText text="PSA OpenSTAT references are historical farmgate observations for Region II / Cagayan Valley, not live market quotations or Aparri-specific selling prices. Invalid and nonpositive prices are excluded from comparisons; missing PSA “..” cells are not imported as zero." /></div>
+          <CardContent className="p-4 sm:p-6">
+            {loading ? <p className="py-10 text-center text-sm text-muted-foreground"><DashboardText text="Loading current prices…" /></p> : error ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-800">
+                <span role="alert">{error}</span>
+                <Button type="button" variant="outline" onClick={() => void load()}><RefreshCw className="mr-2 h-4 w-4"/><DashboardText text="Retry" /></Button>
+              </div>
+            ) : visibleListings.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground"><DashboardText text="No available listings match this category." /></p> : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {visibleListings.map((listing) => {
+                  const rawPrice = listing.current_price_per_unit ?? listing.price_per_unit;
+                  const price = typeof rawPrice === 'number' && Number.isFinite(rawPrice) ? rawPrice : null;
+                  const rawQuantity = listing.quantity_available ?? listing.quantity;
+                  const quantity = typeof rawQuantity === 'number' && Number.isFinite(rawQuantity) ? rawQuantity : null;
+                  return (
+                    <article key={listing.listing_id} className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h2 className="truncate font-bold text-foreground">{listing.product_name}</h2>
+                          <p className="mt-1 text-sm text-muted-foreground">{categoryOf(listing)}</p>
+                        </div>
+                        <Badge className="shrink-0 bg-[#EAF8EF] text-[#16713E]"><DashboardText text="Available" /></Badge>
                       </div>
-                      <p className="text-xs text-[#45586B]">vs previous period</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-
-          <Card className="border border-[#C8E7D4] bg-gradient-to-br from-white to-[#F0FAF3] shadow-sm md:col-span-2 xl:col-span-1">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#E7F7EC] text-[#16A05A]">
-                  <Lightbulb className="h-8 w-8" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-[#123C5C]">Market Overview</h2>
-                    <TrendingUp className="h-5 w-5 text-[#16A05A]" />
-                  </div>
-                  <p className="mt-1 text-sm leading-5 text-[#123C5C]">
-                    Prices are generally trending upward across major agricultural and fishery products during the selected period.
-                  </p>
-                  <div className="mt-2 flex items-center justify-between rounded-xl border border-[#BFE7CE] bg-white px-3 py-2">
-                    <span className="text-xs text-[#45586B]">Overall Trend</span>
-                    <span className="font-bold text-[#16A05A]">Increasing</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* MAIN CHART + MOVEMENT */}
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,2.15fr)_minmax(330px,0.85fr)]">
-          <Card className="overflow-hidden border-[#DDE3E8] bg-white shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <CardTitle className="text-xl text-[#123C5C] sm:text-2xl">
-                    Market Price Trends (July - November)
-                  </CardTitle>
-                  <CardDescription>Average na buwanang presyo bawat kilo</CardDescription>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button className="rounded-xl bg-[#075985] px-5 py-2 text-sm font-semibold text-white shadow-sm">
-                    All
-                  </button>
-                  {products.map((product) => (
-                    <button
-                      key={product.key}
-                      className={`rounded-xl px-4 py-2 text-sm font-semibold ${product.bg}`}
-                      style={{ color: product.color }}
-                    >
-                      {product.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="px-3 pb-5 sm:px-5">
-              <div className="h-[360px] w-full sm:h-[390px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={priceData} margin={{ top: 10, right: 18, left: 0, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#DCE2E7" />
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fill: '#64748B', fontSize: 13 }}
-                      axisLine={{ stroke: '#CBD5E1' }}
-                      tickLine={{ stroke: '#CBD5E1' }}
-                    />
-                    <YAxis
-                      domain={[0, 200]}
-                      ticks={[0, 50, 100, 150, 200]}
-                      tick={{ fill: '#64748B', fontSize: 13 }}
-                      axisLine={{ stroke: '#CBD5E1' }}
-                      tickLine={{ stroke: '#CBD5E1' }}
-                      label={{
-                        value: 'Price (₱/kg)',
-                        angle: -90,
-                        position: 'insideLeft',
-                        fill: '#64748B',
-                        fontSize: 13,
-                      }}
-                    />
-                    <Tooltip content={<ChartTooltip />} />
-                    {products.map((product) => (
-                      <Line
-                        key={product.key}
-                        type="monotone"
-                        dataKey={product.key}
-                        name={product.name}
-                        stroke={product.color}
-                        strokeWidth={2.5}
-                        dot={{ r: 3.5, fill: '#FFFFFF', stroke: product.color, strokeWidth: 2 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-x-7 gap-y-2 pt-1 text-sm">
-                {products.map((product) => (
-                  <div key={product.key} className="flex items-center gap-2" style={{ color: product.color }}>
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: product.color }} />
-                    {product.name}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[#DDE3E8] bg-white shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xl text-[#123C5C]">Price Movement (July - November)</CardTitle>
-              <CardDescription>Change in average price from July to November</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {products.map((product) => {
-                const change = percentChange(product.current, product.previous);
-                return (
-                  <div key={product.key} className="rounded-xl border border-[#DDE3E8] bg-white p-3 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <ProductIcon product={product} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-[#123C5C]">{product.name}</p>
-                        <p className="text-sm text-[#123C5C]">
-                          ₱{product.previous} → ₱{product.current}/kg
-                        </p>
+                      <p className="mt-5 break-words text-2xl font-black text-foreground">{money(price)} <span className="text-sm font-semibold text-muted-foreground">/ {unitOf(listing)}</span></p>
+                      <div className="mt-4 space-y-2 border-t border-border pt-3 text-sm text-muted-foreground">
+                        <p className="flex items-center gap-2"><Package className="h-4 w-4 shrink-0 text-[#0F9488]" />{quantity == null ? copy("Quantity not reported") : quantity.toLocaleString()} {unitOf(listing)}{' '}<DashboardText text="available" /></p>
+                        <p className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-[#0F9488]" /><span className="truncate">{listing.producer?.name || copy("Verified Producer")} · {listing.location || listing.producer?.location || copy("Location not listed")}</span></p>
                       </div>
-                      <ChangeValue value={change} />
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </section>
+                      <details className="mt-4 min-w-0 rounded-lg border border-[#DDE3E8] bg-[#F8FAFB] p-3 text-sm text-muted-foreground">
+                        <summary className="cursor-pointer font-bold text-foreground"><DashboardText text="PSA market references and comparison" /></summary>
+                        <div className="mt-3 space-y-3">
+                          {referenceError ? <p role="status" className="rounded-md bg-red-50 p-3 text-sm text-red-800">{referenceError}</p>
+                            : !comparisons[listing.listing_id] ? <p className="text-sm"><DashboardText text="Reference comparison is being checked." /></p>
+                              : (() => {
+                                const comparison = comparisons[listing.listing_id];
+                                const reference = comparison.reference;
+                                const multipleMatches = comparison.status === 'MULTIPLE_MATCHES';
+                                const references = multipleMatches
+                                  ? comparison.reference_candidates
+                                  : [{
+                                    commodity_label: comparison.commodity_resolution.canonical_name || listing.product_name,
+                                    reference,
+                                  }];
+                                const explanation = comparison.status === 'UNIT_INCOMPATIBLE'
+                                  ? `Not directly comparable: the listing is priced per ${unitOf(listing)}, while PSA is reported per ${reference.unit || 'kg'}. No verified conversion is available.`
+                                  : comparison.status === 'NO_REFERENCE_AVAILABLE'
+                                    ? 'No verified PSA reference observations are available for a supported commodity match.'
+                                    : comparison.status === 'UNRESOLVED'
+                                      ? 'The product name could not be matched confidently to a supported PSA commodity.'
+                                      : multipleMatches
+                                        ? 'This generic product name matches multiple PSA series. Each variety is shown separately; no combined average or single variety is selected.'
+                                        : null;
 
-        {/* LOWER INFORMATION ROW */}
-        <section className="grid gap-4 lg:grid-cols-3">
-          {/* CURRENT AVERAGES */}
-          <Card className="border-[#DDE3E8] bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-xl text-[#123C5C]">Kasalukuyang Average Prices</CardTitle>
-              <CardDescription>Average market price per kilogram (July - November)</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
-              {products.map((product) => {
-                const change = percentChange(product.current, product.previous);
-                return (
-                  <div key={product.key} className="rounded-xl border border-[#DDE3E8] p-3">
-                    <div className="flex items-center gap-2">
-                      <ProductIcon product={product} size="sm" />
-                      <span className="text-sm font-bold text-[#123C5C]">{product.name}</span>
-                    </div>
-                    <p className="mt-3 text-lg font-bold text-[#123C5C]">₱{product.current}/kg</p>
-                    <p className="text-xs text-[#45586B]">Average price</p>
-                    <div className="mt-2">
-                      <ChangeValue value={change} />
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          {/* HARBORAI INSIGHT */}
-          <Card className="overflow-hidden border-[#9DDCE9] bg-gradient-to-br from-white via-[#F1FBFD] to-[#DDF5FA] shadow-sm">
-            <CardContent className="relative h-full p-5 sm:p-6">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E4F7FA] text-[#075985]">
-                      <Info className="h-7 w-7" />
-                    </div>
-                    <h2 className="text-xl font-bold text-[#123C5C]">HarborAI Market Insight</h2>
-                  </div>
-                  <span className="rounded-full bg-[#D5F3F0] px-3 py-1 text-xs font-semibold text-[#0F766E]">
-                    Based on current data
-                  </span>
-                </div>
-
-                <p className="mt-5 text-base leading-6 text-[#123C5C]">
-                  Rice and fish prices show a steady upward trend during the selected period. This may indicate increasing demand as we approach the last quarter. Buyers may consider securing supplies early to ensure stable prices and availability.
-                </p>
+                                return (
+                                  <>
+                                    {multipleMatches && <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-950">{explanation}</p>}
+                                    {comparison.seasonality&&<p className="rounded-md bg-teal-50 p-3 text-sm"><strong><DashboardText text="Seasonal reference ·" />{' '}{comparison.seasonality.analysis_month_name}</strong><br/>{comparison.seasonality.interpretation}<br/><span className="text-xs">{comparison.seasonality.geographic_limitation}</span></p>}
+                                    {comparison.status === 'COMPARABLE' && comparison.comparison.normalized_listing_price != null && (
+                                      <div className="rounded-md bg-[#EAF8EF] p-3 text-sm text-foreground">
+                                        <span className="font-semibold"><DashboardText text="Comparable listing equivalent:" /></span> {money(comparison.comparison.normalized_listing_price)} / {comparison.comparison.unit || 'PHP/kg'}
+                                      </div>
+                                    )}
+                                    {comparison.status === 'UNIT_INCOMPATIBLE' && (
+                                      <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-950">
+                                        <p className="font-semibold"><DashboardText text="Not directly comparable" /></p>
+                                        <p className="mt-1"><DashboardText text="Producer listing:" />{' '}{money(price)} / {unitOf(listing)}{' '}<DashboardText text=". PSA reference:" />{' '}{reference.observation_count ? `${money(reference.average_price)} / ${reference.unit || 'PHP/kg'}` : copy("No verified observations")}.</p>
+                                        <p className="mt-1">{explanation}</p>
+                                      </div>
+                                    )}
+                                    {comparison.status === 'UNRESOLVED' && <p className="rounded-md bg-slate-100 p-3 text-sm">{explanation}</p>}
+                                    {references.length > 0 ? (
+                                      <div className="grid min-w-0 gap-3">
+                                        {references.map((candidate) => (
+                                          <ReferenceCard
+                                            key={candidate.commodity_label}
+                                            label={candidate.commodity_label}
+                                            reference={candidate.reference}
+                                          />
+                                        ))}
+                                      </div>
+                                    ) : comparison.status === 'NO_REFERENCE_AVAILABLE' ? (
+                                      <ReferenceCard label={comparison.commodity_resolution.canonical_name || listing.product_name} reference={reference} />
+                                    ) : null}
+                                    <p className="text-xs leading-5 text-muted-foreground"><DashboardText text="PSA OpenSTAT historical Region II / Cagayan Valley farmgate references are not live quotations or Aparri-specific selling prices. No procurement price is recommended." /></p>
+                                  </>
+                                );
+                              })()}
+                        </div>
+                      </details>
+                    </article>
+                  );
+                })}
               </div>
-
-              <div className="pointer-events-none absolute -bottom-12 -left-8 h-28 w-[120%] rounded-[50%] bg-[#B9EAF3]/60" />
-              <div className="pointer-events-none absolute -bottom-16 -right-8 h-24 w-[80%] rounded-[50%] bg-[#83D9E8]/45" />
-            </CardContent>
-          </Card>
-
-          {/* MARKET GUIDE */}
-          <Card className="border-[#DDE3E8] bg-white shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-xl text-[#123C5C]">
-                <BookOpen className="h-6 w-6 text-[#123C5C]" />
-                Gabay sa Market
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F7EC] text-[#16A05A]">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#123C5C]">Subaybayan ang price trends</p>
-                  <p className="text-sm text-[#45586B]">Tumutulong ito sa mas matalinong pagdedesisyon.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F7EC] text-[#16A05A]">
-                  <CalendarDays className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#123C5C]">Isaalang-alang ang seasonal changes</p>
-                  <p className="text-sm text-[#45586B]">Ang ilang produkto ay may peak at low season.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F7EC] text-[#16A05A]">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#123C5C]">Hambingin ang prices ng suppliers</p>
-                  <p className="text-sm text-[#45586B]">Makakatulong ito upang makahanap ng mas magandang alok.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F7EC] text-[#16A05A]">
-                  <BarChart3 className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#123C5C]">Magplano ng bulk purchases</p>
-                  <p className="text-sm text-[#45586B]">Mas malaking tipid kapag maagang nagplano.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

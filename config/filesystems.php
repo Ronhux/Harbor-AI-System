@@ -40,7 +40,11 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Serves from public/storage directly. A symlink/junction cannot be
+            // created on this host without elevated rights, which previously left
+            // uploaded product images unreachable over HTTP. Writing straight
+            // into the public directory keeps uploads instantly web-accessible.
+            'root' => public_path('storage'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,

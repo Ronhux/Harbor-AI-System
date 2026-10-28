@@ -35,13 +35,20 @@ class ProductListing extends Model
         'image_path',
     ];
 
+    /*
+    | `views` is deliberately absent from $fillable. It is a server owned
+    | metric that must never be accepted from a client payload, so the only
+    | way it changes is the atomic increment in ProducerController.
+    */
+
     protected $casts = [
         'harvest_date' => 'date',
         'expiry_date' => 'date',
         'current_price_per_unit' => 'float',
         'price_per_unit' => 'float',
-        'quantity_available' => 'integer',
+        'quantity_available' => 'float',
         'quantity' => 'float',
+        'views' => 'integer',
     ];
 
     /*
@@ -57,6 +64,11 @@ class ProductListing extends Model
             'producer_id',
             'producer_id'
         );
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ProductListingImage::class, 'listing_id', 'listing_id')->orderByDesc('is_primary')->orderBy('id');
     }
 
     /*

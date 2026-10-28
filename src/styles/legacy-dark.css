@@ -1,0 +1,235 @@
+/* Established palette compatibility. New UI should use semantic theme tokens. */
+@layer utilities {
+  .dark .bg-\[\#22C55E\] { background-color: color-mix(in srgb, #22C55E 35%, var(--card)); }
+  .dark .bg-\[\#22D3EE\] { background-color: color-mix(in srgb, #22D3EE 35%, var(--card)); }
+  .dark .bg-\[\#D8D3C4\] { background-color: color-mix(in srgb, #D8D3C4 12%, var(--card)); }
+  .dark .bg-\[\#D9F4E1\] { background-color: color-mix(in srgb, #D9F4E1 12%, var(--card)); }
+  .dark .bg-\[\#DCFCE7\] { background-color: color-mix(in srgb, #DCFCE7 12%, var(--card)); }
+  .dark .bg-\[\#DDEEDC\] { background-color: color-mix(in srgb, #DDEEDC 12%, var(--card)); }
+  .dark .bg-\[\#DDF3E4\] { background-color: color-mix(in srgb, #DDF3E4 12%, var(--card)); }
+  .dark .bg-\[\#DDF3F1\] { background-color: color-mix(in srgb, #DDF3F1 12%, var(--card)); }
+  .dark .bg-\[\#DDF4F7\] { background-color: color-mix(in srgb, #DDF4F7 12%, var(--card)); }
+  .dark .bg-\[\#DDF6E6\] { background-color: color-mix(in srgb, #DDF6E6 12%, var(--card)); }
+  .dark .bg-\[\#DFF4EA\] { background-color: color-mix(in srgb, #DFF4EA 12%, var(--card)); }
+  .dark .bg-\[\#E2F0FF\] { background-color: color-mix(in srgb, #E2F0FF 12%, var(--card)); }
+  .dark .bg-\[\#E3F4ED\] { background-color: color-mix(in srgb, #E3F4ED 12%, var(--card)); }
+  .dark .bg-\[\#E4F5E9\] { background-color: color-mix(in srgb, #E4F5E9 12%, var(--card)); }
+  .dark .bg-\[\#E5E1D8\] { background-color: color-mix(in srgb, #E5E1D8 12%, var(--card)); }
+  .dark .bg-\[\#E6E2D9\] { background-color: color-mix(in srgb, #E6E2D9 12%, var(--card)); }
+  .dark .bg-\[\#E6F4F2\] { background-color: color-mix(in srgb, #E6F4F2 12%, var(--card)); }
+  .dark .bg-\[\#E7F4E8\] { background-color: color-mix(in srgb, #E7F4E8 12%, var(--card)); }
+  .dark .bg-\[\#E7F4F2\] { background-color: color-mix(in srgb, #E7F4F2 12%, var(--card)); }
+  .dark .bg-\[\#E7F7EC\] { background-color: color-mix(in srgb, #E7F7EC 12%, var(--card)); }
+  .dark .bg-\[\#E8DFDB\] { background-color: color-mix(in srgb, #E8DFDB 12%, var(--card)); }
+  .dark .bg-\[\#E8E4DB\] { background-color: color-mix(in srgb, #E8E4DB 12%, var(--card)); }
+  .dark .bg-\[\#E8E7E2\] { background-color: color-mix(in srgb, #E8E7E2 12%, var(--card)); }
+  .dark .bg-\[\#E8F3E8\] { background-color: color-mix(in srgb, #E8F3E8 12%, var(--card)); }
+  .dark .bg-\[\#EAF4EF\] { background-color: color-mix(in srgb, #EAF4EF 12%, var(--card)); }
+  .dark .bg-\[\#EAF4F2\] { background-color: color-mix(in srgb, #EAF4F2 12%, var(--card)); }
+  .dark .bg-\[\#EAF5EA\] { background-color: color-mix(in srgb, #EAF5EA 12%, var(--card)); }
+  .dark .bg-\[\#EAF8E9\] { background-color: color-mix(in srgb, #EAF8E9 12%, var(--card)); }
+  .dark .bg-\[\#EAF8EF\] { background-color: color-mix(in srgb, #EAF8EF 12%, var(--card)); }
+  .dark .bg-\[\#ECFDF5\] { background-color: color-mix(in srgb, #ECFDF5 12%, var(--card)); }
+  .dark .bg-\[\#EEE5FF\] { background-color: color-mix(in srgb, #EEE5FF 12%, var(--card)); }
+  .dark .bg-\[\#EFF7EF\] { background-color: color-mix(in srgb, #EFF7EF 12%, var(--card)); }
+  .dark .bg-\[\#F0B52B\] { background-color: color-mix(in srgb, #F0B52B 35%, var(--card)); }
+  .dark .bg-\[\#F0EEE9\] { background-color: color-mix(in srgb, #F0EEE9 12%, var(--card)); }
+  .dark .bg-\[\#F0FDF4\] { background-color: color-mix(in srgb, #F0FDF4 12%, var(--card)); }
+  .dark .bg-\[\#F0FDFA\] { background-color: color-mix(in srgb, #F0FDFA 12%, var(--card)); }
+  .dark .bg-\[\#F1EEE6\] { background-color: color-mix(in srgb, #F1EEE6 12%, var(--card)); }
+  .dark .bg-\[\#F1EFE9\] { background-color: color-mix(in srgb, #F1EFE9 12%, var(--card)); }
+  .dark .bg-\[\#F1F5F4\] { background-color: color-mix(in srgb, #F1F5F4 12%, var(--card)); }
+  .dark .bg-\[\#F2F4F1\] { background-color: color-mix(in srgb, #F2F4F1 12%, var(--card)); }
+  .dark .bg-\[\#F3F7F8\] { background-color: color-mix(in srgb, #F3F7F8 12%, var(--card)); }
+  .dark .bg-\[\#F3FAFD\] { background-color: color-mix(in srgb, #F3FAFD 12%, var(--card)); }
+  .dark .bg-\[\#F4F6F4\] { background-color: color-mix(in srgb, #F4F6F4 12%, var(--card)); }
+  .dark .bg-\[\#F4FAFD\] { background-color: color-mix(in srgb, #F4FAFD 12%, var(--card)); }
+  .dark .bg-\[\#F59E0B\] { background-color: color-mix(in srgb, #F59E0B 35%, var(--card)); }
+  .dark .bg-\[\#F7F5F0\] { background-color: color-mix(in srgb, #F7F5F0 12%, var(--card)); }
+  .dark .bg-\[\#F7F5F1\] { background-color: color-mix(in srgb, #F7F5F1 12%, var(--card)); }
+  .dark .bg-\[\#F8F7F1\] { background-color: color-mix(in srgb, #F8F7F1 12%, var(--card)); }
+  .dark .bg-\[\#F8F8F4\] { background-color: color-mix(in srgb, #F8F8F4 12%, var(--card)); }
+  .dark .bg-\[\#F8F8F5\] { background-color: color-mix(in srgb, #F8F8F5 12%, var(--card)); }
+  .dark .bg-\[\#F8FAF7\] { background-color: color-mix(in srgb, #F8FAF7 12%, var(--card)); }
+  .dark .bg-\[\#F8FAF8\] { background-color: color-mix(in srgb, #F8FAF8 12%, var(--card)); }
+  .dark .bg-\[\#F8FAFB\] { background-color: color-mix(in srgb, #F8FAFB 12%, var(--card)); }
+  .dark .bg-\[\#F8FBFC\] { background-color: color-mix(in srgb, #F8FBFC 12%, var(--card)); }
+  .dark .bg-\[\#FBBE24\] { background-color: color-mix(in srgb, #FBBE24 35%, var(--card)); }
+  .dark .bg-\[\#FBFAF6\] { background-color: color-mix(in srgb, #FBFAF6 12%, var(--card)); }
+  .dark .bg-\[\#FBFCF8\] { background-color: color-mix(in srgb, #FBFCF8 12%, var(--card)); }
+  .dark .bg-\[\#FBFCF9\] { background-color: color-mix(in srgb, #FBFCF9 12%, var(--card)); }
+  .dark .bg-\[\#FDE68A\] { background-color: color-mix(in srgb, #FDE68A 12%, var(--card)); }
+  .dark .bg-\[\#FDF0D7\] { background-color: color-mix(in srgb, #FDF0D7 12%, var(--card)); }
+  .dark .bg-\[\#FEE2E2\] { background-color: color-mix(in srgb, #FEE2E2 12%, var(--card)); }
+  .dark .bg-\[\#FEE4E2\] { background-color: color-mix(in srgb, #FEE4E2 12%, var(--card)); }
+  .dark .bg-\[\#FEFEFC\] { background-color: color-mix(in srgb, #FEFEFC 12%, var(--card)); }
+  .dark .bg-\[\#FFF0D5\] { background-color: color-mix(in srgb, #FFF0D5 12%, var(--card)); }
+  .dark .bg-\[\#FFFBEB\] { background-color: color-mix(in srgb, #FFFBEB 12%, var(--card)); }
+  .dark .bg-\[\#FFFBF2\] { background-color: color-mix(in srgb, #FFFBF2 12%, var(--card)); }
+  .dark .bg-amber-100 { background-color: color-mix(in srgb, var(--color-amber-500) 18%, var(--card)); }
+  .dark .bg-amber-200 { background-color: color-mix(in srgb, var(--color-amber-500) 18%, var(--card)); }
+  .dark .bg-amber-50 { background-color: color-mix(in srgb, var(--color-amber-500) 18%, var(--card)); }
+  .dark .bg-blue-100 { background-color: color-mix(in srgb, var(--color-blue-500) 18%, var(--card)); }
+  .dark .bg-blue-200 { background-color: color-mix(in srgb, var(--color-blue-500) 18%, var(--card)); }
+  .dark .bg-blue-50 { background-color: color-mix(in srgb, var(--color-blue-500) 18%, var(--card)); }
+  .dark .bg-cyan-100 { background-color: color-mix(in srgb, var(--color-cyan-500) 18%, var(--card)); }
+  .dark .bg-cyan-200 { background-color: color-mix(in srgb, var(--color-cyan-500) 18%, var(--card)); }
+  .dark .bg-cyan-50 { background-color: color-mix(in srgb, var(--color-cyan-500) 18%, var(--card)); }
+  .dark .bg-emerald-100 { background-color: color-mix(in srgb, var(--color-emerald-500) 18%, var(--card)); }
+  .dark .bg-emerald-200 { background-color: color-mix(in srgb, var(--color-emerald-500) 18%, var(--card)); }
+  .dark .bg-emerald-50 { background-color: color-mix(in srgb, var(--color-emerald-500) 18%, var(--card)); }
+  .dark .bg-green-100 { background-color: color-mix(in srgb, var(--color-green-500) 18%, var(--card)); }
+  .dark .bg-green-200 { background-color: color-mix(in srgb, var(--color-green-500) 18%, var(--card)); }
+  .dark .bg-green-50 { background-color: color-mix(in srgb, var(--color-green-500) 18%, var(--card)); }
+  .dark .bg-indigo-100 { background-color: color-mix(in srgb, var(--color-indigo-500) 18%, var(--card)); }
+  .dark .bg-indigo-200 { background-color: color-mix(in srgb, var(--color-indigo-500) 18%, var(--card)); }
+  .dark .bg-indigo-50 { background-color: color-mix(in srgb, var(--color-indigo-500) 18%, var(--card)); }
+  .dark .bg-orange-100 { background-color: color-mix(in srgb, var(--color-orange-500) 18%, var(--card)); }
+  .dark .bg-orange-200 { background-color: color-mix(in srgb, var(--color-orange-500) 18%, var(--card)); }
+  .dark .bg-orange-50 { background-color: color-mix(in srgb, var(--color-orange-500) 18%, var(--card)); }
+  .dark .bg-purple-100 { background-color: color-mix(in srgb, var(--color-purple-500) 18%, var(--card)); }
+  .dark .bg-purple-200 { background-color: color-mix(in srgb, var(--color-purple-500) 18%, var(--card)); }
+  .dark .bg-purple-50 { background-color: color-mix(in srgb, var(--color-purple-500) 18%, var(--card)); }
+  .dark .bg-red-100 { background-color: color-mix(in srgb, var(--color-red-500) 18%, var(--card)); }
+  .dark .bg-red-200 { background-color: color-mix(in srgb, var(--color-red-500) 18%, var(--card)); }
+  .dark .bg-red-50 { background-color: color-mix(in srgb, var(--color-red-500) 18%, var(--card)); }
+  .dark .bg-rose-100 { background-color: color-mix(in srgb, var(--color-rose-500) 18%, var(--card)); }
+  .dark .bg-rose-200 { background-color: color-mix(in srgb, var(--color-rose-500) 18%, var(--card)); }
+  .dark .bg-rose-50 { background-color: color-mix(in srgb, var(--color-rose-500) 18%, var(--card)); }
+  .dark .bg-teal-100 { background-color: color-mix(in srgb, var(--color-teal-500) 18%, var(--card)); }
+  .dark .bg-teal-200 { background-color: color-mix(in srgb, var(--color-teal-500) 18%, var(--card)); }
+  .dark .bg-teal-50 { background-color: color-mix(in srgb, var(--color-teal-500) 18%, var(--card)); }
+  .dark .bg-yellow-100 { background-color: color-mix(in srgb, var(--color-yellow-500) 18%, var(--card)); }
+  .dark .bg-yellow-200 { background-color: color-mix(in srgb, var(--color-yellow-500) 18%, var(--card)); }
+  .dark .bg-yellow-50 { background-color: color-mix(in srgb, var(--color-yellow-500) 18%, var(--card)); }
+  .dark .border-\[\#8FC39A\] { border-color: var(--border); }
+  .dark .border-\[\#A7D7B5\] { border-color: var(--border); }
+  .dark .border-\[\#B7D8C0\] { border-color: var(--border); }
+  .dark .border-\[\#B7E4C7\] { border-color: var(--border); }
+  .dark .border-\[\#B9CBD2\] { border-color: var(--border); }
+  .dark .border-\[\#BDB6AA\] { border-color: var(--border); }
+  .dark .border-\[\#CBE6D1\] { border-color: var(--border); }
+  .dark .border-\[\#D6D3C8\] { border-color: var(--border); }
+  .dark .border-\[\#D6D9D4\] { border-color: var(--border); }
+  .dark .border-\[\#D6DDD6\] { border-color: var(--border); }
+  .dark .border-\[\#D7DEE7\] { border-color: var(--border); }
+  .dark .border-\[\#D7E6ED\] { border-color: var(--border); }
+  .dark .border-\[\#D8D1C4\] { border-color: var(--border); }
+  .dark .border-\[\#D8D2C3\] { border-color: var(--border); }
+  .dark .border-\[\#D8D3C4\] { border-color: var(--border); }
+  .dark .border-\[\#D8D3D4\] { border-color: var(--border); }
+  .dark .border-\[\#D8E4E8\] { border-color: var(--border); }
+  .dark .border-\[\#D8E8F0\] { border-color: var(--border); }
+  .dark .border-\[\#D8EAD9\] { border-color: var(--border); }
+  .dark .border-\[\#DCD6C4\] { border-color: var(--border); }
+  .dark .border-\[\#DCD6CB\] { border-color: var(--border); }
+  .dark .border-\[\#DCD8D2\] { border-color: var(--border); }
+  .dark .border-\[\#DCE7D8\] { border-color: var(--border); }
+  .dark .border-\[\#DDE3D9\] { border-color: var(--border); }
+  .dark .border-\[\#DDE3E8\] { border-color: var(--border); }
+  .dark .border-\[\#E0E3DD\] { border-color: var(--border); }
+  .dark .border-\[\#E2DED6\] { border-color: var(--border); }
+  .dark .border-\[\#E5E0D7\] { border-color: var(--border); }
+  .dark .border-\[\#E5E1D8\] { border-color: var(--border); }
+  .dark .border-\[\#E6E0D6\] { border-color: var(--border); }
+  .dark .border-\[\#E6E1D8\] { border-color: var(--border); }
+  .dark .border-\[\#E7E2D9\] { border-color: var(--border); }
+  .dark .border-\[\#E7EAE5\] { border-color: var(--border); }
+  .dark .border-\[\#E7EDF0\] { border-color: var(--border); }
+  .dark .border-\[\#F1ECE1\] { border-color: var(--border); }
+  .dark .border-\[\#F59E0B\] { border-color: var(--border); }
+  .dark .border-\[\#F5F1E5\] { border-color: var(--border); }
+  .dark .border-\[\#FBBE24\] { border-color: var(--border); }
+  .dark .border-\[\#FDE68A\] { border-color: var(--border); }
+  .dark .text-\[\#0B4842\] { color: color-mix(in srgb, #0B4842 30%, #ffffff); }
+  .dark .text-\[\#0D706B\] { color: color-mix(in srgb, #0D706B 30%, #ffffff); }
+  .dark .text-\[\#0E7490\] { color: color-mix(in srgb, #0E7490 30%, #ffffff); }
+  .dark .text-\[\#0F766E\] { color: color-mix(in srgb, #0F766E 30%, #ffffff); }
+  .dark .text-\[\#0F9488\] { color: color-mix(in srgb, #0F9488 30%, #ffffff); }
+  .dark .text-\[\#13843E\] { color: color-mix(in srgb, #13843E 30%, #ffffff); }
+  .dark .text-\[\#138B78\] { color: color-mix(in srgb, #138B78 30%, #ffffff); }
+  .dark .text-\[\#138BA3\] { color: color-mix(in srgb, #138BA3 30%, #ffffff); }
+  .dark .text-\[\#151B2A\] { color: color-mix(in srgb, #151B2A 30%, #ffffff); }
+  .dark .text-\[\#15803D\] { color: color-mix(in srgb, #15803D 30%, #ffffff); }
+  .dark .text-\[\#158C64\] { color: color-mix(in srgb, #158C64 30%, #ffffff); }
+  .dark .text-\[\#159447\] { color: color-mix(in srgb, #159447 30%, #ffffff); }
+  .dark .text-\[\#166534\] { color: color-mix(in srgb, #166534 30%, #ffffff); }
+  .dark .text-\[\#16713E\] { color: color-mix(in srgb, #16713E 30%, #ffffff); }
+  .dark .text-\[\#168B65\] { color: color-mix(in srgb, #168B65 30%, #ffffff); }
+  .dark .text-\[\#16A05A\] { color: color-mix(in srgb, #16A05A 30%, #ffffff); }
+  .dark .text-\[\#1976D2\] { color: color-mix(in srgb, #1976D2 30%, #ffffff); }
+  .dark .text-\[\#256431\] { color: color-mix(in srgb, #256431 30%, #ffffff); }
+  .dark .text-\[\#2F281D\] { color: color-mix(in srgb, #2F281D 30%, #ffffff); }
+  .dark .text-\[\#2F7D3C\] { color: color-mix(in srgb, #2F7D3C 30%, #ffffff); }
+  .dark .text-\[\#315D35\] { color: color-mix(in srgb, #315D35 30%, #ffffff); }
+  .dark .text-\[\#3B362F\] { color: color-mix(in srgb, #3B362F 30%, #ffffff); }
+  .dark .text-\[\#3B7A22\] { color: color-mix(in srgb, #3B7A22 30%, #ffffff); }
+  .dark .text-\[\#3E3932\] { color: color-mix(in srgb, #3E3932 30%, #ffffff); }
+  .dark .text-\[\#3F7F2F\] { color: color-mix(in srgb, #3F7F2F 30%, #ffffff); }
+  .dark .text-\[\#4D8B35\] { color: color-mix(in srgb, #4D8B35 30%, #ffffff); }
+  .dark .text-\[\#55716A\] { color: color-mix(in srgb, #55716A 30%, #ffffff); }
+  .dark .text-\[\#5A6B7B\] { color: color-mix(in srgb, #5A6B7B 30%, #ffffff); }
+  .dark .text-\[\#5B554D\] { color: color-mix(in srgb, #5B554D 30%, #ffffff); }
+  .dark .text-\[\#5B7184\] { color: color-mix(in srgb, #5B7184 30%, #ffffff); }
+  .dark .text-\[\#5F594F\] { color: color-mix(in srgb, #5F594F 30%, #ffffff); }
+  .dark .text-\[\#7048D7\] { color: color-mix(in srgb, #7048D7 30%, #ffffff); }
+  .dark .text-\[\#71808C\] { color: color-mix(in srgb, #71808C 30%, #ffffff); }
+  .dark .text-\[\#766F64\] { color: color-mix(in srgb, #766F64 30%, #ffffff); }
+  .dark .text-\[\#788693\] { color: color-mix(in srgb, #788693 30%, #ffffff); }
+  .dark .text-\[\#81796E\] { color: color-mix(in srgb, #81796E 30%, #ffffff); }
+  .dark .text-\[\#8A5A00\] { color: color-mix(in srgb, #8A5A00 30%, #ffffff); }
+  .dark .text-\[\#8B7F72\] { color: color-mix(in srgb, #8B7F72 30%, #ffffff); }
+  .dark .text-\[\#92400E\] { color: color-mix(in srgb, #92400E 30%, #ffffff); }
+  .dark .text-\[\#991B1B\] { color: color-mix(in srgb, #991B1B 30%, #ffffff); }
+  .dark .text-\[\#B42318\] { color: color-mix(in srgb, #B42318 30%, #ffffff); }
+  .dark .text-\[\#B45309\] { color: color-mix(in srgb, #B45309 30%, #ffffff); }
+  .dark .text-\[\#B8202B\] { color: color-mix(in srgb, #B8202B 30%, #ffffff); }
+  .dark .text-amber-600 { color: var(--color-amber-300); }
+  .dark .text-amber-700 { color: var(--color-amber-300); }
+  .dark .text-amber-800 { color: var(--color-amber-300); }
+  .dark .text-amber-900 { color: var(--color-amber-300); }
+  .dark .text-blue-600 { color: var(--color-blue-300); }
+  .dark .text-blue-700 { color: var(--color-blue-300); }
+  .dark .text-blue-800 { color: var(--color-blue-300); }
+  .dark .text-blue-900 { color: var(--color-blue-300); }
+  .dark .text-cyan-600 { color: var(--color-cyan-300); }
+  .dark .text-cyan-700 { color: var(--color-cyan-300); }
+  .dark .text-cyan-800 { color: var(--color-cyan-300); }
+  .dark .text-cyan-900 { color: var(--color-cyan-300); }
+  .dark .text-emerald-600 { color: var(--color-emerald-300); }
+  .dark .text-emerald-700 { color: var(--color-emerald-300); }
+  .dark .text-emerald-800 { color: var(--color-emerald-300); }
+  .dark .text-emerald-900 { color: var(--color-emerald-300); }
+  .dark .text-green-600 { color: var(--color-green-300); }
+  .dark .text-green-700 { color: var(--color-green-300); }
+  .dark .text-green-800 { color: var(--color-green-300); }
+  .dark .text-green-900 { color: var(--color-green-300); }
+  .dark .text-indigo-600 { color: var(--color-indigo-300); }
+  .dark .text-indigo-700 { color: var(--color-indigo-300); }
+  .dark .text-indigo-800 { color: var(--color-indigo-300); }
+  .dark .text-indigo-900 { color: var(--color-indigo-300); }
+  .dark .text-orange-600 { color: var(--color-orange-300); }
+  .dark .text-orange-700 { color: var(--color-orange-300); }
+  .dark .text-orange-800 { color: var(--color-orange-300); }
+  .dark .text-orange-900 { color: var(--color-orange-300); }
+  .dark .text-purple-600 { color: var(--color-purple-300); }
+  .dark .text-purple-700 { color: var(--color-purple-300); }
+  .dark .text-purple-800 { color: var(--color-purple-300); }
+  .dark .text-purple-900 { color: var(--color-purple-300); }
+  .dark .text-red-600 { color: var(--color-red-300); }
+  .dark .text-red-700 { color: var(--color-red-300); }
+  .dark .text-red-800 { color: var(--color-red-300); }
+  .dark .text-red-900 { color: var(--color-red-300); }
+  .dark .text-rose-600 { color: var(--color-rose-300); }
+  .dark .text-rose-700 { color: var(--color-rose-300); }
+  .dark .text-rose-800 { color: var(--color-rose-300); }
+  .dark .text-rose-900 { color: var(--color-rose-300); }
+  .dark .text-teal-600 { color: var(--color-teal-300); }
+  .dark .text-teal-700 { color: var(--color-teal-300); }
+  .dark .text-teal-800 { color: var(--color-teal-300); }
+  .dark .text-teal-900 { color: var(--color-teal-300); }
+  .dark .text-yellow-600 { color: var(--color-yellow-300); }
+  .dark .text-yellow-700 { color: var(--color-yellow-300); }
+  .dark .text-yellow-800 { color: var(--color-yellow-300); }
+  .dark .text-yellow-900 { color: var(--color-yellow-300); }
+}

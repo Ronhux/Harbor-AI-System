@@ -1,401 +1,241 @@
-import { Package, CheckCircle2, Clock, Truck, XCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
+import { DashboardText, useDashboardCopy } from '../../../i18n/DashboardCopy';
+import { useNotificationRecord } from '../../../contracts/useNotificationRecord';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Package, Clock, Truck, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { useState } from 'react';
+import FeedbackModal from '../../../components/ui/feedback-modal';
+import PageHeader from '../../../components/dashboard/PageHeader';
+import { request } from '../../../../lib/api';
+
+type OrderDetail = {
+  order_detail_id: number; listing_id: number; product_name: string;
+  quantity: number; unit?: string | null; unit_price: number; subtotal: number;
+};
+
+type Order = {
+  order_id: number; producer_subtotal: number; order_date: string; delivery_date?: string | null;
+  fulfillment_status: string; payment_status: string;
+  buyer?: { name?: string; organization_name?: string | null };
+  /** Only the lines belonging to the logged in producer's own listings. */
+  details?: OrderDetail[];
+  negotiation?: { reference: string; status?: string; agreement_snapshot: any } | null;
+};
+
+type StatusFeedback = { tone: 'loading' | 'success'; title: string; description: string };
+
+const nextStatus: Record<string, string> = {
+  'Order Submitted': 'Order Confirmed', 'Order Confirmed': 'Preparing Order',
+  'Preparing Order': 'Ready for Shipment', 'Ready for Shipment': 'Shipped', Shipped: 'Delivered',
+};
+
+/**
+ * Summarizes the producer's own lines on one order.
+ *
+ * A shared order can hold several of this producer's products, so the card
+ * never presents one arbitrary line as if it were the whole order.
+ */
+const summarizeOwnDetails = (details: OrderDetail[]) => {
+  const own = Array.isArray(details) ? details : [];
+
+  if (own.length === 0) {
+    return {
+      title: 'Product',
+      quantity: '—',
+      unitPrice: null as number | null,
+      products: 0,
+    };
+  }
+
+  const units = Array.from(new Set(own.map((d) => d.unit).filter(Boolean)));
+  const prices = Array.from(new Set(own.map((d) => Number(d.unit_price))));
+  const totalQuantity = own.reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+
+  return {
+    title: own.length === 1 ? own[0].product_name : `${own.length} products`,
+    quantity:
+      units.length === 1
+        ? `${Number(totalQuantity).toLocaleString()} ${units[0]}`
+        : own.length === 1
+          ? Number(totalQuantity).toLocaleString()
+          : 'Mixed units',
+    unitPrice: prices.length === 1 ? Number(own[0].unit_price) : null,
+    products: own.length,
+  };
+};
 
 export default function Orders() {
-  const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null);
-  const orders = [
-    {
-      id: 'ORD-2026-001',
-      buyer: 'LGU Aparri',
-      product: 'Premium Organic Rice',
-      quantity: '500 kg',
-      amount: 62500,
-      status: 'Processing',
-      date: '2026-02-10',
-      deliveryDate: '2026-02-20',
-      paymentStatus: 'Pending',
-    },
-    {
-      id: 'ORD-2026-002',
-      buyer: 'Kadiwa Outlet 1',
-      product: 'Fresh Tilapia',
-      quantity: '200 kg',
-      amount: 36000,
-      status: 'In Transit',
-      date: '2026-02-08',
-      deliveryDate: '2026-02-15',
-      paymentStatus: 'Paid',
-    },
-    {
-      id: 'ORD-2026-003',
-      buyer: 'DA-RFO II',
-      product: 'Organic Corn',
-      quantity: '300 kg',
-      amount: 13500,
-      status: 'Delivered',
-      date: '2026-02-01',
-      deliveryDate: '2026-02-12',
-      paymentStatus: 'Paid',
-    },
-    {
-      id: 'ORD-2026-004',
-      buyer: 'BFAR Office',
-      product: 'Mixed Vegetables',
-      quantity: '150 kg',
-      amount: 9000,
-      status: 'Pending',
-      date: '2026-02-12',
-      deliveryDate: '2026-02-22',
-      paymentStatus: 'Pending',
-    },
-    {
-      id: 'ORD-2026-005',
-      buyer: 'Kadiwa Outlet 2',
-      product: 'Premium Organic Rice',
-      quantity: '400 kg',
-      amount: 50000,
-      status: 'Cancelled',
-      date: '2026-02-05',
-      deliveryDate: 'N/A',
-      paymentStatus: 'Refunded',
-    },
-    {
-      id: 'ORD-2026-006',
-      buyer: 'LGU Aparri',
-      product: 'Mixed Vegetables',
-      quantity: '250 kg',
-      amount: 17500,
-      status: 'Completed',
-      date: '2026-01-20',
-      deliveryDate: '2026-01-27',
-      paymentStatus: 'Paid',
-    },
-  ];
+  const copy = useDashboardCopy();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState<number | null>(null);
+  const [statusFeedback, setStatusFeedback] = useState<StatusFeedback | null>(null);
+  const [view, setView] = useState<'active' | 'history'>('active');
+  const updatingOrder = useRef(false);
 
-  const getStatusConfig = (status: string) => {
-    const configs: Record<string, { icon: any; color: string; badge: string }> = {
-      'Pending': { icon: Clock, color: 'yellow', badge: 'bg-yellow-500' },
-      'Processing': { icon: Package, color: 'blue', badge: 'bg-blue-500' },
-      'In Transit': { icon: Truck, color: 'purple', badge: 'bg-purple-500' },
-      'Delivered': { icon: CheckCircle2, color: 'green', badge: 'bg-green-500' },
-      'Completed': { icon: CheckCircle2, color: 'teal', badge: 'bg-teal-500' },
-      'Cancelled': { icon: XCircle, color: 'red', badge: 'bg-red-500' },
-    };
-    return configs[status] || configs['Pending'];
+  /*
+   | Transaction history split.
+   |
+   | The terminal set mirrors NegotiationController's order transition table and
+   | ProducerController::TERMINAL_FULFILFILLMENT_STATUSES exactly: Delivered,
+   | Completed, Cancelled and Rejected close an order. Anything else - including
+   | the legacy 'Pending' column default - is still in progress and stays on the
+   | Active view. Nothing is deleted and no stored status is rewritten; the two
+   | views are the same records seen through different filters, so reports and
+   | transaction history keep full access to completed orders.
+   */
+  const HISTORY_STATUSES = ['Delivered', 'Completed', 'Cancelled', 'Rejected'];
+
+  const isHistoryOrder = (order: Order) =>
+    HISTORY_STATUSES.includes(order.fulfillment_status);
+
+  const activeOrders = useMemo(
+    () => orders.filter((order) => !isHistoryOrder(order)),
+    [orders],
+  );
+  const historyOrders = useMemo(
+    () => orders.filter(isHistoryOrder),
+    [orders],
+  );
+  const [focusedOrder, setFocusedOrder] = useState<number | null>(null);
+  const shownOrders = (view === 'active' ? activeOrders : historyOrders).filter(o => focusedOrder === null || o.order_id === focusedOrder);
+  useNotificationRecord('orders', !loading && !error, id => {
+    const order = orders.find(o => o.order_id === id);
+    if (order) {setView(isHistoryOrder(order) ? 'history' : 'active');setFocusedOrder(id);}
+    else setError('This order is not available to your account.');
+  });
+
+  const load = async () => {
+    setLoading(true); setError('');
+    try { const data = await request('/api/producer/orders'); setOrders(Array.isArray(data) ? data : []); }
+    catch (e: any) { console.error('Unable to load producer transaction records', e); setError('Unable to load transaction records. Check your connection and try again.'); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { void load(); }, []);
+
+  const counts = useMemo(() => ({
+    all: orders.length,
+    pending: activeOrders.filter(o => o.fulfillment_status === 'Order Submitted').length,
+    processing: activeOrders.filter(o => ['Order Confirmed', 'Preparing Order', 'Ready for Shipment'].includes(o.fulfillment_status)).length,
+    transit: activeOrders.filter(o => o.fulfillment_status === 'Shipped').length,
+    delivered: historyOrders.filter(o => ['Delivered', 'Completed'].includes(o.fulfillment_status)).length,
+  }), [activeOrders, historyOrders]);
+
+  const update = async (order: Order, status: string) => {
+    if (updatingOrder.current) return;
+    updatingOrder.current = true;
+    setBusy(order.order_id); setError('');
+    setStatusFeedback({
+      tone: 'loading',
+      title: 'Updating Order Status...',
+      description: 'Please wait while we update this order.',
+    });
+    try {
+      const result = await request(`/api/producer/orders/${order.order_id}`, {
+        method: 'PATCH',
+        body: { status },
+      });
+      const savedStatus = result?.order?.fulfillment_status;
+      if (!savedStatus) throw new Error('The server did not confirm the updated order status.');
+
+      setOrders((current) => current.map((item) =>
+        item.order_id === order.order_id ? { ...item, fulfillment_status: savedStatus } : item,
+      ));
+      const descriptions: Record<string, string> = {
+        'Order Confirmed': 'The order has been accepted and is now confirmed.',
+        'Preparing Order': 'The order is now being prepared.',
+        'Ready for Shipment': 'The order is now ready for shipment.',
+        Shipped: 'The order has been marked as shipped.',
+        Delivered: 'The order has been marked as delivered.',
+        Completed: 'The order has been completed.',
+      };
+      setStatusFeedback({
+        tone: 'success',
+        title: savedStatus === 'Completed' ? 'Order Completed Successfully!' : 'Order Updated Successfully!',
+        description: descriptions[savedStatus] || `The order status is now ${savedStatus}.`,
+      });
+    } catch (e: any) {
+      setStatusFeedback(null);
+      console.error('Unable to update producer order', e);
+      setError(e?.message || 'This order could not be updated. Check the current status and try again.');
+    } finally {
+      updatingOrder.current = false;
+      setBusy(null);
+    }
   };
 
-  const filterOrders = (status?: string) => {
-    if (!status) return orders;
-    if (status === 'active') return orders.filter(o => ['Pending', 'Processing', 'In Transit'].includes(o.status));
-    return orders.filter(o => o.status === status);
-  };
-
-  const renderOrderCard = (order: typeof orders[0]) => {
-    const config = getStatusConfig(order.status);
-    const StatusIcon = config.icon;
-
-    return (
-      <Card key={order.id} className="border-2 hover:shadow-md transition">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <CardTitle className="text-lg">{order.id}</CardTitle>
-                <Badge className={config.badge + ' text-white'}>
-                  {order.status}
-                </Badge>
-              </div>
-              <CardDescription>{order.buyer}</CardDescription>
-            </div>
-            <StatusIcon className={`w-6 h-6 text-${config.color}-600`} />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Product:</span>
-              <span className="font-medium text-gray-900">{order.product}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Quantity:</span>
-              <span className="font-medium text-gray-900">{order.quantity}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Order Date:</span>
-              <span className="font-medium text-gray-900">{order.date}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Delivery Date:</span>
-              <span className="font-medium text-gray-900">{order.deliveryDate}</span>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t flex items-center justify-between">
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Total Amount</div>
-              <div className="text-xl font-bold text-green-600">₱{order.amount.toLocaleString()}</div>
-            </div>
-            <div className="text-right">
-              <Badge variant={order.paymentStatus === 'Paid' ? 'default' : 'outline'}>
-                {order.paymentStatus}
-              </Badge>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedOrder(order)}>
-              View Details
-            </Button>
-            {order.status === 'Pending' && (
-              <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
-                Accept Order
-              </Button>
-            )}
-            {order.status === 'Processing' && (
-              <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                Mark as Shipped
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
+  const stats = [
+    ['Kabuuang Orders', counts.all, Package], ['Pending', counts.pending, Clock],
+    ['Pinoproseso', counts.processing, Package], ['In Transit', counts.transit, Truck],
+    ['Nai-deliver', counts.delivered, CheckCircle2],
+  ] as const;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <Package className="w-8 h-8 text-blue-600" />
-          Transaction Management
-        </h1>
-        <p className="text-gray-600 mt-1">Subaybayan ang lifecycle ng institutional orders mula request hanggang completion</p>
+    <div className="space-y-6 p-4 sm:p-6">
+      <FeedbackModal
+        open={statusFeedback !== null}
+        tone={statusFeedback?.tone ?? 'loading'}
+        title={statusFeedback?.title ?? ''}
+        description={statusFeedback?.description ?? ''}
+        busy={statusFeedback?.tone === 'loading'}
+        onClose={() => setStatusFeedback(null)}
+        onCloseLabel={copy("Done")}
+      />
+      <PageHeader title={copy("Transaction Management")} icon={Package} subtitle={copy("Subaybayan ang confirmed institutional orders at fulfillment.")} />
+      {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-red-50 p-3 text-sm text-red-800"><p>{error}</p><Button variant="outline" size="sm" onClick={() => void load()}><DashboardText text="Reload records" /></Button></div>}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{stats.map(([label, count, Icon]) => <Card key={label} className="min-w-0"><CardContent className="p-4"><Icon className="mb-2 h-5 w-5 text-[#0F9488]"/><div className="text-2xl font-bold text-foreground">{count}</div><div className="text-sm text-muted-foreground">{label}</div></CardContent></Card>)}</div>
+      <div role="tablist" aria-label={copy("Transaction view")} className="inline-flex w-full max-w-md rounded-full border border-border bg-card p-1">
+        {([['active', 'Active Transactions', activeOrders.length], ['history', 'Transaction History', historyOrders.length]] as const).map(([value, label, count]) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={view === value}
+            onClick={() => setView(value)}
+            className={`min-h-11 flex-1 rounded-full px-4 text-sm font-bold transition-colors ${view === value ? 'bg-[#123C5C] text-white' : 'text-muted-foreground hover:bg-background'}`}
+          >
+            {label}<span className="ml-2 opacity-80">{count}</span>
+          </button>
+        ))}
       </div>
-
-      {/* Summary Stats */}
-      <div className="grid md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-gray-900">{orders.length}</div>
-            <div className="text-sm text-gray-600">Kabuuang Orders</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              {filterOrders('Pending').length}
-            </div>
-            <div className="text-sm text-gray-600">Pending</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {filterOrders('Processing').length}
-            </div>
-            <div className="text-sm text-gray-600">Pinoproseso</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-purple-600">
-              {filterOrders('In Transit').length}
-            </div>
-            <div className="text-sm text-gray-600">In Transit</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {filterOrders('Delivered').length}
-            </div>
-            <div className="text-sm text-gray-600">Nai-deliver</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-teal-600">
-              {filterOrders('Completed').length}
-            </div>
-            <div className="text-sm text-gray-600">Nakumpleto</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Orders Tabs */}
-      <Tabs defaultValue="all" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="all">Lahat ng Orders</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="Delivered">Delivered</TabsTrigger>
-          <TabsTrigger value="Completed">Completed</TabsTrigger>
-          <TabsTrigger value="Cancelled">Cancelled</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {orders.map(renderOrderCard)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="active" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {filterOrders('active').map(renderOrderCard)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="Delivered" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {filterOrders('Delivered').map(renderOrderCard)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="Completed" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {filterOrders('Completed').map(renderOrderCard)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="Cancelled" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {filterOrders('Cancelled').map(renderOrderCard)}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Tips */}
-      <Card className="bg-green-50 border-green-200">
-        <CardContent className="p-6">
-          <h3 className="font-bold text-green-900 mb-3">Tips sa Pamamahala ng Orders</h3>
-          <div className="grid md:grid-cols-2 gap-3 text-sm text-green-800">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Sumagot sa bagong orders sa loob ng 24 oras</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Agad na i-update ang order status</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Panatilihin ang quality standards para sa repeat orders</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Ipaalam agad ang mga delay sa delivery</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Order Details Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Order Details - {selectedOrder?.id}</DialogTitle>
-            <DialogDescription>Kumpletong impormasyon tungkol sa order na ito</DialogDescription>
-          </DialogHeader>
-          {selectedOrder && (
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-bold text-gray-900 mb-2">Impormasyon ng Order</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Order ID:</span>
-                        <span className="font-medium">{selectedOrder.id}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Buyer:</span>
-                        <span className="font-medium">{selectedOrder.buyer}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Product:</span>
-                        <span className="font-medium">{selectedOrder.product}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Quantity:</span>
-                        <span className="font-medium">{selectedOrder.quantity}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Order Date:</span>
-                        <span className="font-medium">{selectedOrder.date}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Delivery Date:</span>
-                        <span className="font-medium">{selectedOrder.deliveryDate}</span>
-                      </div>
-                    </div>
-                  </div>
+      <p className="text-xs text-muted-foreground">
+        {view === 'active'
+          ? copy("Orders that still need monitoring or action: submitted, confirmed, preparing, ready to ship, or shipped.")
+          : copy("Completed and closed transactions: delivered, completed, cancelled, or rejected. These records are retained for reports and transaction history.")}
+      </p>
+      {focusedOrder !== null && <Button variant="outline" onClick={() => setFocusedOrder(null)}><DashboardText text="Show all transactions" /></Button>}
+      {loading ? <p className="p-6 text-center text-muted-foreground"><DashboardText text="Loading orders…" /></p> : orders.length === 0 ? <Card><CardContent className="p-8 text-center text-muted-foreground"><DashboardText text="No official orders are linked to your listings yet. Orders appear here after both sides confirm a negotiation." /></CardContent></Card> : shownOrders.length === 0 ? <Card><CardContent className="p-8 text-center text-muted-foreground">{view === 'active' ? copy("No active transactions. Completed transactions are available in Transaction History.") : copy("No completed transactions yet.")}</CardContent></Card> : <div className="grid gap-4 lg:grid-cols-2">{shownOrders.map(order => {
+        const summary = summarizeOwnDetails(order.details ?? []);
+        const next = nextStatus[order.fulfillment_status];
+        return (
+          <Card key={order.order_id} className="border-border">
+            <CardContent className="space-y-4 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="break-words font-bold text-foreground"><DashboardText text="Order #" />{' '}{order.order_id} · {summary.title}</h2>
+                  <p className="text-sm text-muted-foreground">{order.buyer?.organization_name || order.buyer?.name || copy("Institutional buyer")}</p>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-bold text-gray-900 mb-2">Status at Payment</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Order Status:</span>
-                        <Badge className={getStatusConfig(selectedOrder.status).badge + ' text-white'}>
-                          {selectedOrder.status}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Payment Status:</span>
-                        <Badge variant={selectedOrder.paymentStatus === 'Paid' ? 'default' : 'outline'}>
-                          {selectedOrder.paymentStatus}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Amount:</span>
-                        <span className="font-bold text-green-600 text-lg">₱{selectedOrder.amount.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-[#0F9488]/10 text-[#0B4842]">{order.fulfillment_status === 'Ready for Shipment' ? <><Truck className="mr-1 inline h-3.5 w-3.5" aria-hidden="true"/><DashboardText text="Ready to Ship" /></> : order.fulfillment_status}</Badge>
+                  {order.negotiation?.status === 'Agreement Confirmed' && <Badge className="gap-1 bg-emerald-50 text-emerald-800"><CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true"/><DashboardText text="Both Parties Approved" /></Badge>}
                 </div>
               </div>
-              <div className="pt-4 border-t">
-                <h4 className="font-bold text-gray-900 mb-3">Timeline ng Order</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Order placed on {selectedOrder.date}</span>
-                  </div>
-                  {selectedOrder.status !== 'Pending' && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm">Na-accept at pinoproseso ang order</span>
-                    </div>
-                  )}
-                  {['In Transit', 'Delivered'].includes(selectedOrder.status) && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm">Order shipped on {selectedOrder.deliveryDate}</span>
-                    </div>
-                  )}
-                  {selectedOrder.status === 'Delivered' && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Matagumpay na na-deliver ang order</span>
-                    </div>
-                  )}
-                  {selectedOrder.status === 'Cancelled' && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span className="text-sm">Kinansela ang order</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-2 break-words text-sm">
+                <dt>{summary.products > 1 ? copy("Total quantity") : copy("Agreed quantity")}</dt><dd>{summary.quantity}</dd>
+                <dt><DashboardText text="Agreed unit price" /></dt><dd>{summary.unitPrice === null ? (summary.products > 1 ? copy("Varies per product") : '—') : `₱${summary.unitPrice.toLocaleString()}`}</dd>
+                <dt><DashboardText text="Total" /></dt><dd className="font-bold">₱{Number(order.producer_subtotal || 0).toLocaleString()}</dd>
+                <dt><DashboardText text="Delivery date" /></dt><dd>{order.delivery_date || copy("Not specified")}</dd>
+                <dt><DashboardText text="Order date" /></dt><dd>{order.order_date}</dd>
+                <dt><DashboardText text="Negotiation" /></dt><dd>{order.negotiation?.reference || '—'}</dd>
+              </dl>
+              {order.negotiation?.agreement_snapshot?.notes && <p className="whitespace-pre-wrap rounded-lg bg-card p-3 text-sm">{order.negotiation.agreement_snapshot.notes}</p>}
+              {next && <Button disabled={busy === order.order_id} onClick={() => void update(order, next)}>{busy === order.order_id ? copy("Saving…") : order.fulfillment_status === 'Order Submitted' ? copy("Accept Order") : copy("Mark {0}", [next])}</Button>}
+            </CardContent>
+          </Card>
+        );
+      })}</div>}
     </div>
   );
 }

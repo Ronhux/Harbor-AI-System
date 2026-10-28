@@ -11,14 +11,14 @@ export default function ProgramsPage() {
       name: 'Sagip Saka Act (RA 11321)',
       icon: Shield,
       color: 'navy',
-      description: 'Comprehensive support for farmers and fisherfolk through consolidation, protection, and enhancement of programs and services.',
+      description: 'Comprehensive support for farmers through consolidation, protection, and enhancement of programs and services.',
       benefits: [
         'Financial assistance for farming and fishing operations',
         'Access to modern farming/fishing equipment',
         'Training and capacity building programs',
         'Insurance and risk mitigation support',
       ],
-      eligibility: 'Registered farmers and fisherfolk in Aparri, Cagayan',
+      eligibility: 'Registered farmers in Aparri, Cagayan',
       agency: 'Department of Agriculture (DA)',
     },
     {
@@ -33,7 +33,7 @@ export default function ProgramsPage() {
         'Stable and regular demand',
         'Marketing and promotional support',
       ],
-      eligibility: 'Verified producers with quality agricultural/fishery products',
+      eligibility: 'Verified producers with quality agricultural products',
       agency: 'Department of Agriculture (DA)',
     },
     {
@@ -107,7 +107,7 @@ export default function ProgramsPage() {
             Government Support Programs
           </h1>
           <p className="text-xl text-[#45586B]">
-            HarborAI uses advanced AI to automatically match you with eligible government programs 
+            HarborAI uses advanced AI to automatically match you with eligible government programs
             based on your profile, enterprise, and needs. No manual applications required.
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function ProgramsPage() {
           {programs.map((program) => {
             const Icon = program.icon;
             const colors = getColorClasses(program.color);
-            
+
             return (
               <Card key={program.id} className="border-2 border-[#E7E1D0] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                 <CardHeader>

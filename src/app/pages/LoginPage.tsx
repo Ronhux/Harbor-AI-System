@@ -1,3 +1,5 @@
+import { clearAuthStorage } from '../../lib/authStorage';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
@@ -5,36 +7,72 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import LanguageSwitcher from '../i18n/LanguageSwitcher';
+import { useLanguage } from '../i18n/useLanguage';
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const { t, lang } = useLanguage();
+  const tr=(en:string,fil:string)=>lang==='fil'?fil:en;
+  const [registrationResult,setRegistrationResult]=useState<{status:'Pending'|'Rejected';reason:string|null}|null>(null);
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  /**
+   * Maps a failed sign-in response to a message that matches what actually
+   * happened. A server or network problem is never reported as "wrong
+   * password", and internal server detail is never echoed back to the browser.
+   */
+  const describeFailure = (response: Response, result: any): string => {
+    const serverMessage = typeof result?.message === 'string' ? result.message : '';
+    const firstValidationMessage = () => {
+      const errors = result?.errors;
+      if (errors && typeof errors === 'object') {
+        for (const value of Object.values(errors as Record<string, unknown>)) {
+          if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+        }
+      }
+      return '';
+    };
+
+    if (response.status === 401) return t('login.invalidCredentials');
+    if (response.status === 403) return serverMessage || t('login.accountRestricted');
+    if (response.status === 419) return t('login.connectionError');
+    if (response.status === 422) return firstValidationMessage() || serverMessage || t('login.fillAllFields');
+    if (response.status === 429) return t('login.tooManyAttempts');
+    // Never surface a 5xx body: it can contain SQL or internal detail.
+    if (response.status >= 500) return t('login.serverError');
+    return serverMessage || t('login.loginFailed');
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(loading)return;
+    setRegistrationResult(null);
     setError('');
     setLoading(true);
-    
-    if (!email || !password) {
-      setError('Please fill in all fields');
+
+    if (!identifier.trim() || !password) {
+      setError(t('login.fillAllFields'));
       setLoading(false);
       return;
     }
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-      
+
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': csrfToken,
         },
+        // A single identifier field accepts either your mobile number or your
+        // email address; the API decides which account to match.
         body: JSON.stringify({
-          email,
+          identifier: identifier.trim(),
           password,
         }),
       });
@@ -43,76 +81,77 @@ export default function LoginPage() {
 
       if (response.ok) {
         const userType = result.user?.user_type;
-        const normalizedRole = userType === 'Farmer' ? 'producer' : userType === 'Buyer' ? 'buyer' : userType === 'Admin' ? 'admin' : 'buyer';
+        const normalizedRole = ['Farmer', 'Fisherfolk', 'Producer'].includes(userType) ? 'producer' : userType === 'Buyer' ? 'buyer' : userType === 'Admin' ? 'admin' : userType === 'Super Admin' ? 'superadmin' : userType === 'KADIWA Manager' ? 'kadiwa' : 'buyer';
 
         localStorage.setItem('userRole', normalizedRole);
-        localStorage.setItem('userEmail', result.user.email);
-        localStorage.setItem('userName', `${result.user.first_name} ${result.user.last_name}`);
+        localStorage.setItem('userName', `${result.user.first_name ?? ''} ${result.user.last_name ?? ''}`.trim());
         localStorage.setItem('userId', result.user.user_id.toString());
         if (result.token) {
           localStorage.setItem('authToken', result.token);
         }
-        
+
         if (result.user.verification_status) {
           localStorage.setItem('verificationStatus', result.user.verification_status);
         }
-        
-        if (normalizedRole === 'admin') {
+
+        localStorage.setItem(
+          'userEmail',
+          result.user.email ?? identifier.trim(),
+        );
+
+        if (normalizedRole === 'kadiwa') {
+          navigate('/kadiwa');
+        } else if (normalizedRole === 'admin') {
           navigate('/admin');
+        } else if (normalizedRole === 'superadmin') {
+          navigate('/superadmin');
         } else if (normalizedRole === 'producer') {
           navigate('/producer');
         } else if (normalizedRole === 'buyer') {
           navigate('/buyer');
         }
+      } else if(response.status===403 && ['Pending','Rejected'].includes(result.registration_status)) {
+        clearAuthStorage();
+        setPassword('');
+        setRegistrationResult({status:result.registration_status,reason:typeof result.applicant_reason==='string'?result.applicant_reason:null});
       } else {
-        setError(result.message || 'Login failed. Please check your credentials.');
+        setError(describeFailure(response, result));
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Login failed. Please try again.');
+      console.error('Login request failed:', error);
+      setError(t('login.connectionError'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F1E5] font-body relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background font-body relative overflow-hidden flex items-center justify-center p-4">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@400;500;600;700;800&display=swap');
         .font-display { font-family: 'Anton', ui-sans-serif, sans-serif; }
         .font-body { font-family: 'Baloo 2', ui-rounded, system-ui, sans-serif; }
       `}</style>
 
+      <Dialog open={registrationResult!==null} onOpenChange={open=>{if(!open)setRegistrationResult(null)}}><DialogContent className="bg-card text-foreground"><DialogHeader><DialogTitle>{registrationResult?.status==='Rejected'?tr('Registration Not Approved','Hindi Naaprubahan ang Rehistrasyon'):tr('Pending Review','Naghihintay ng Pagsusuri')}</DialogTitle><DialogDescription>{registrationResult?.status==='Rejected'?tr('Your Producer registration was not approved following administrative review.','Hindi naaprubahan ang iyong rehistrasyon bilang Producer matapos ang pagsusuri ng administrator.'):tr('Your registration has been submitted and is awaiting administrative approval.','Naisumite ang iyong rehistrasyon at naghihintay ng pag-apruba ng administrator.')}</DialogDescription></DialogHeader>{registrationResult?.reason&&<p className="whitespace-pre-wrap break-words text-sm"><strong>{tr('Reason:','Dahilan:')}</strong> {registrationResult.reason}</p>}<p className="text-sm text-muted-foreground">{tr('Please contact the Municipal Agriculture Office for clarification.','Mangyaring makipag-ugnayan sa Municipal Agriculture Office para sa paglilinaw.')}</p><DialogFooter><Button type="button" onClick={()=>setRegistrationResult(null)}>{tr('Return to Login','Bumalik sa Pag-sign in')}</Button></DialogFooter></DialogContent></Dialog>
       {/* Ambient color glow */}
       <div className="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-[#22C55E]/20 blur-[100px]"></div>
-      <div className="pointer-events-none absolute -bottom-16 -right-16 w-80 h-80 rounded-full bg-[#0F9488]/20 blur-[100px]"></div>
-
-      {/* Illustrated horizon, echoes the landing page hero */}
-      <div className="absolute bottom-0 left-0 w-full leading-none z-0" aria-hidden="true">
-        <svg viewBox="0 0 1440 180" preserveAspectRatio="none" className="w-full h-20 sm:h-28 md:h-32 block">
-          <defs>
-            <linearGradient id="loginHorizonGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#22C55E" />
-              <stop offset="55%" stopColor="#22C55E" />
-              <stop offset="72%" stopColor="#0F9488" />
-              <stop offset="100%" stopColor="#0EA5A0" />
-            </linearGradient>
-          </defs>
-          <path d="M0,95 C180,50 360,95 540,68 C720,40 900,85 1080,58 C1260,30 1350,65 1440,50 L1440,180 L0,180 Z" fill="#BFEFE2" opacity="0.5" />
-          <path d="M0,70 L70,108 L140,76 L210,120 L280,86 L350,128 L420,94 L490,132 L560,100 L630,136 L700,112 Q760,146 820,128 T940,136 T1060,108 T1180,130 T1300,98 L1440,116 L1440,180 L0,180 Z" fill="url(#loginHorizonGrad)" />
-        </svg>
-      </div>
 
       <Card className="w-full max-w-md relative z-10 rounded-2xl border-0 shadow-xl overflow-hidden">
         <div className="h-2 bg-gradient-to-r from-[#22C55E] via-[#0F9488] to-[#22D3EE]"></div>
         <CardHeader className="text-center pt-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <img src="/logo.png" alt="HarborAI Logo" className="w-14 h-14 object-contain" />
-            <span className="font-display text-3xl text-[#123C5C] tracking-tight">HarborAI</span>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <img src="/logo.png" alt="HarborAI Logo" className="h-14 w-14 shrink-0 object-contain" />
+              <span className="truncate font-display text-3xl text-foreground tracking-tight">HarborAI</span>
+            </div>
+            <div className="shrink-0">
+              <LanguageSwitcher />
+            </div>
           </div>
-          <CardTitle className="text-2xl text-[#123C5C]">Welcome Back</CardTitle>
-          <CardDescription className="text-[#45586B]">
-            Login to access your HarborAI dashboard
+          <CardTitle className="text-2xl text-foreground">{t('login.welcomeBack')}</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            {t('login.loginToAccess')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -123,25 +162,32 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="identifier">{t('login.mobileOrEmail')}</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                name="identifier"
+                type="text"
+                inputMode="text"
+                autoComplete="username"
+                placeholder="09171234567 or your.email@example.com"
+                aria-describedby="identifier-help"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
                 className="rounded-full"
               />
+              <p id="identifier-help" className="mt-1 text-xs text-muted-foreground">
+                {t('login.identifierHelp')}
+              </p>
             </div>
 
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('login.password')}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder={t('login.enterPassword')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -149,9 +195,9 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                  className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-muted-foreground"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -160,26 +206,26 @@ export default function LoginPage() {
 
             <Button type="submit" className="w-full rounded-full font-bold bg-[#22C55E] hover:bg-[#15803D]" disabled={loading}>
               <LogIn className="w-4 h-4 mr-2" />
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? t('login.loggingIn') : t('login.login')}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-[#45586B]">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             <p>
-              Producer without an account?{' '}
+              {t('login.producerNoAccount')}{' '}
               <Link to="/register" className="text-[#0F9488] hover:text-[#0B4842] hover:underline font-bold">
-                Register here
+                {t('login.registerHere')}
               </Link>
             </p>
-            <p className="mt-2 text-xs text-[#45586B]/70">
-              Note: Institutional buyers and administrators receive login credentials from DA/LGU
+            <p className="mt-2 text-xs text-muted-foreground/70">
+              {t('login.institutionalNote')}
             </p>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-[#E7E1D0]">
+          <div className="mt-6 pt-6 border-t border-border">
             <Link to="/">
-              <Button variant="ghost" className="w-full rounded-full font-semibold text-[#123C5C] hover:bg-[#123C5C]/5">
-                Back to Home
+              <Button variant="ghost" className="w-full rounded-full font-semibold text-foreground hover:bg-[#123C5C]/5">
+                {t('login.backToHome')}
               </Button>
             </Link>
           </div>

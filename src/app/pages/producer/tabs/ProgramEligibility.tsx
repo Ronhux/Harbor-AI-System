@@ -17,7 +17,7 @@ export default function ProgramEligibility() {
       match: 95,
       benefits: '₱25,000 - ₱50,000 in financial assistance',
       requirements: [
-        { name: 'Registered Farmer/Fisher', met: true },
+        { name: 'Registered Farmer', met: true },
         { name: 'Active in last 2 years', met: true },
         { name: 'Land ownership/lease proof', met: true },
         { name: 'Barangay certification', met: false },
@@ -218,7 +218,7 @@ export default function ProgramEligibility() {
                             <div>
                               <h4 className="font-bold text-gray-900 mb-2">Pangkalahatang-ideya ng Program</h4>
                               <p className="text-sm text-gray-600">
-                                Comprehensive support for farmers and fisherfolk through consolidation, protection, and enhancement of programs and services.
+                                Comprehensive support for farmers through consolidation, protection, and enhancement of programs and services.
                               </p>
                             </div>
                             <div>
@@ -325,7 +325,7 @@ export default function ProgramEligibility() {
             <div>
               <h3 className="font-bold text-purple-900 mb-2">Kailangan ng Tulong sa Applications?</h3>
               <p className="text-sm text-purple-800 mb-3">
-                Our AI system automatically checks your eligibility, but you can also get personalized 
+                Our AI system automatically checks your eligibility, but you can also get personalized
                 assistance from DA/LGU personnel for any program applications.
               </p>
               <div className="flex gap-2">

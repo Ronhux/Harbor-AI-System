@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
+type PolicySubsection = [title: string, intro: string, bullets: string[], closing?: string];
+
 const sections = [
   {
     title: '1. WHO WE ARE',
@@ -17,7 +19,7 @@ const sections = [
   {
     title: '2. INFORMATION WE PROCESS',
     intro: 'HarborAI processes information necessary to provide and operate the Service.',
-    subsections: [
+    subsections: ([
       ['Farmer registration and verification information', 'For registered farmers, certain information may be provided, pre-populated, verified, or referenced through authorized DA and/or MAO records.', ['Full name', 'Registered address or location', 'Contact information, where available', 'Type of agricultural activity', 'Farm-related information', 'RSBSA number', 'Other registration information necessary to verify the farmer\'s eligibility to use HarborAI'], 'This information is primarily used to verify a farmer\'s registration and eligibility to access the Service. HarborAI does not represent that it independently collected all of this information directly from the farmer.'],
       ['Account information', 'Information required to create and manage a HarborAI account may include:', ['Username', 'Email address', 'Mobile number', 'Account type', 'Password'], 'Passwords are protected using appropriate security measures, including hashing where applicable.'],
       ['Product information', 'When a registered farmer creates a product listing, HarborAI may process:', ['Product name', 'Product category', 'Product description', 'Quantity', 'Price', 'Availability', 'Production or harvest information', 'Product images', 'Other information provided for the purpose of creating a listing']],
@@ -27,7 +29,7 @@ const sections = [
       ['Payment information', 'Where applicable, HarborAI may process:', ['Payment method', 'Transaction or reference number', 'Payment amount', 'Uploaded proof of payment'], 'HarborAI does not intentionally collect or store complete payment passwords, PINs, or other sensitive payment credentials.'],
       ['Delivery information', 'Where delivery is supported, we may process:', ['Delivery address', 'Municipality or city', 'Province', 'Contact information', 'Delivery instructions']],
       ['Technical information', 'HarborAI may automatically process limited technical information such as:', ['Device type', 'Browser information', 'IP address', 'Login information', 'System activity or session logs']],
-    ],
+    ] as PolicySubsection[]),
   },
   {
     title: '3. HOW WE USE YOUR INFORMATION',
@@ -77,58 +79,58 @@ const sections = [
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-[#F5F1E5] font-body text-[#123C5C]">
+    <div className="min-h-screen bg-background font-body text-foreground">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Anton&family=Baloo+2:wght@400;500;600;700;800&display=swap'); .font-display { font-family: 'Anton', ui-sans-serif, sans-serif; } .font-body { font-family: 'Baloo 2', ui-rounded, system-ui, sans-serif; }`}</style>
-      <header className="sticky top-0 z-20 border-b border-[#E7E1D0] bg-[#F5F1E5]/95 shadow-sm backdrop-blur-sm">
+      <header className="sticky top-0 z-20 border-b border-border bg-background/95 shadow-sm backdrop-blur-sm">
         <div className="container mx-auto flex min-h-16 items-center justify-between gap-4 px-4 py-3">
           <Link to="/" className="flex items-center gap-3">
             <img src="/logo.png" alt="HarborAI Logo" className="h-11 w-11 object-contain" />
             <span className="font-display text-xl tracking-tight">HarborAI</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/faq"><Button variant="outline" className="rounded-full border-2 border-[#123C5C] font-bold text-[#123C5C] hover:bg-[#123C5C] hover:text-white">FAQ</Button></Link>
+            <Link to="/faq"><Button variant="outline" className="rounded-full border-2 border-[#123C5C] font-bold text-foreground hover:bg-[#123C5C] hover:text-white">FAQ</Button></Link>
             <Link to="/login"><Button className="rounded-full bg-[#22C55E] font-bold hover:bg-[#15803D]">Login</Button></Link>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto max-w-5xl px-4 py-8 sm:py-12">
-        <section className="mb-8 rounded-2xl border border-[#0F9488]/25 bg-white p-6 shadow-sm sm:p-10">
+        <section className="mb-8 rounded-2xl border border-[#0F9488]/25 bg-card p-6 shadow-sm sm:p-10">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0F9488]/15 text-[#0F9488]"><ShieldCheck className="h-7 w-7" /></div>
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#0F9488]">HarborAI</p>
-              <h1 className="mt-1 font-display text-3xl tracking-tight text-[#123C5C] sm:text-5xl">Privacy Policy</h1>
-              <p className="mt-3 text-[#45586B]">Effective date: September 15, 2026</p>
-              <p className="mt-4 max-w-3xl leading-7 text-[#45586B]">HarborAI values your privacy. This Privacy Policy explains how we process, use, share, store, and protect your information when you use the HarborAI: Smart Trading and Enterprise Platform for Agriculture in Aparri.</p>
-              <p className="mt-3 max-w-3xl leading-7 text-[#45586B]">This Privacy Policy is guided by Republic Act No. 10173 (Data Privacy Act of 2012), its Implementing Rules and Regulations, and applicable issuances of the National Privacy Commission (NPC).</p>
+              <h1 className="mt-1 font-display text-3xl tracking-tight text-foreground sm:text-5xl">Privacy Policy</h1>
+              <p className="mt-3 text-muted-foreground">Effective date: September 15, 2026</p>
+              <p className="mt-4 max-w-3xl leading-7 text-muted-foreground">HarborAI values your privacy. This Privacy Policy explains how we process, use, share, store, and protect your information when you use the HarborAI: Smart Trading and Enterprise Platform for Agriculture in Aparri.</p>
+              <p className="mt-3 max-w-3xl leading-7 text-muted-foreground">This Privacy Policy is guided by Republic Act No. 10173 (Data Privacy Act of 2012), its Implementing Rules and Regulations, and applicable issuances of the National Privacy Commission (NPC).</p>
             </div>
           </div>
         </section>
 
         <div className="space-y-6">
           {sections.map((section) => (
-            <section key={section.title} className="rounded-2xl border border-[#E7E1D0] bg-white p-6 shadow-sm sm:p-8">
-              <h2 className="font-display text-2xl tracking-tight text-[#123C5C] sm:text-3xl">{section.title}</h2>
-              {'intro' in section && section.intro && <p className="mt-4 leading-7 text-[#45586B]">{section.intro}</p>}
-              {'content' in section && section.content?.map((paragraph) => <p key={paragraph} className="mt-4 leading-7 text-[#45586B]">{paragraph}</p>)}
-              {'bullets' in section && section.bullets && <ul className="mt-4 list-disc space-y-2 pl-6 leading-7 text-[#45586B]">{section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}
-              {'subsections' in section && section.subsections && <div className="mt-5 space-y-6">{section.subsections.map(([title, intro, bullets, closing]) => <div key={title}><h3 className="text-lg font-bold text-[#0F9488]">{title}</h3>{intro && <p className="mt-2 leading-7 text-[#45586B]">{intro}</p>}{bullets && <ul className="mt-3 list-disc space-y-2 pl-6 leading-7 text-[#45586B]">{bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}{closing && <p className="mt-3 leading-7 text-[#45586B]">{closing}</p>}</div>)}</div>}
+            <section key={section.title} className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+              <h2 className="font-display text-2xl tracking-tight text-foreground sm:text-3xl">{section.title}</h2>
+              {'intro' in section && section.intro && <p className="mt-4 leading-7 text-muted-foreground">{section.intro}</p>}
+              {'content' in section && section.content?.map((paragraph) => <p key={paragraph} className="mt-4 leading-7 text-muted-foreground">{paragraph}</p>)}
+              {'bullets' in section && section.bullets && <ul className="mt-4 list-disc space-y-2 pl-6 leading-7 text-muted-foreground">{section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}
+              {'subsections' in section && section.subsections && <div className="mt-5 space-y-6">{section.subsections.map(([title, intro, bullets, closing]) => <div key={title}><h3 className="text-lg font-bold text-[#0F9488]">{title}</h3>{intro && <p className="mt-2 leading-7 text-muted-foreground">{intro}</p>}{bullets && <ul className="mt-3 list-disc space-y-2 pl-6 leading-7 text-muted-foreground">{bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}{closing && <p className="mt-3 leading-7 text-muted-foreground">{closing}</p>}</div>)}</div>}
             </section>
           ))}
 
           <section className="rounded-2xl border border-[#0F9488]/30 bg-[#0F9488]/5 p-6 shadow-sm sm:p-8">
-            <h2 className="font-display text-2xl tracking-tight text-[#123C5C] sm:text-3xl">11. CONTACT US</h2>
-            <p className="mt-4 leading-7 text-[#45586B]">For privacy inquiries, requests concerning your personal information, complaints, or questions regarding this Privacy Policy, please contact the HarborAI System Administrator / Data Privacy Officer through the contact information provided within the HarborAI system.</p>
-            <p className="mt-4 leading-7 text-[#45586B]">For concerns regarding farmer registration information originating from the Department of Agriculture or Municipal Agriculture Office, users may also be directed to the appropriate agricultural office when necessary.</p>
-            <div className="mt-6 rounded-xl border border-[#E7E1D0] bg-white p-5 leading-8 text-[#45586B]">
-              <p className="font-bold text-[#123C5C]">HarborAI</p>
+            <h2 className="font-display text-2xl tracking-tight text-foreground sm:text-3xl">11. CONTACT US</h2>
+            <p className="mt-4 leading-7 text-muted-foreground">For privacy inquiries, requests concerning your personal information, complaints, or questions regarding this Privacy Policy, please contact the HarborAI System Administrator / Data Privacy Officer through the contact information provided within the HarborAI system.</p>
+            <p className="mt-4 leading-7 text-muted-foreground">For concerns regarding farmer registration information originating from the Department of Agriculture or Municipal Agriculture Office, users may also be directed to the appropriate agricultural office when necessary.</p>
+            <div className="mt-6 rounded-xl border border-border bg-card p-5 leading-8 text-muted-foreground">
+              <p className="font-bold text-foreground">HarborAI</p>
               <p>Smart Trading and Enterprise Platform for Agriculture in Aparri</p>
               <p><strong>Email:</strong> [Insert official HarborAI email]</p>
               <p><strong>Contact Number:</strong> [Insert contact number]</p>
               <p><strong>Address:</strong> Aparri, Cagayan, Philippines</p>
             </div>
-            <p className="mt-5 leading-7 text-[#45586B]">For information about your data privacy rights, you may also refer to the <a href="https://privacy.gov.ph/" target="_blank" rel="noreferrer" className="font-bold text-[#0F9488] underline hover:text-[#15803D]">National Privacy Commission</a>.</p>
+            <p className="mt-5 leading-7 text-muted-foreground">For information about your data privacy rights, you may also refer to the <a href="https://privacy.gov.ph/" target="_blank" rel="noreferrer" className="font-bold text-[#0F9488] underline hover:text-[#15803D]">National Privacy Commission</a>.</p>
           </section>
         </div>
       </main>

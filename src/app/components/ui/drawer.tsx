@@ -1,3 +1,4 @@
+import { useDashboardPortalTheme } from '../../theme/DashboardPortalTheme';
 "use client";
 
 import * as React from "react";
@@ -33,6 +34,7 @@ function DrawerOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Overlay>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <DrawerPrimitive.Overlay
       data-slot="drawer-overlay"
@@ -41,7 +43,7 @@ function DrawerOverlay({
         className,
       )}
       {...props}
-    />
+    data-harbor-dashboard-theme={portalTheme} />
   );
 }
 
@@ -50,6 +52,7 @@ function DrawerContent({
   children,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+  const portalTheme = useDashboardPortalTheme();
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
@@ -64,7 +67,7 @@ function DrawerContent({
           className,
         )}
         {...props}
-      >
+       data-harbor-dashboard-theme={portalTheme}>
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         {children}
       </DrawerPrimitive.Content>
